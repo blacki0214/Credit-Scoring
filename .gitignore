@@ -3,3 +3,4 @@ data/application_train.csv
 data/credit_card_balance.csv
 data/installments_payments.csv
 *.csv
+.venv

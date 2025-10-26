@@ -55,15 +55,18 @@ def derive_fico_features(app, bureau, install, credit=None):
     fico = fico.merge(owed_feat, on="SK_ID_CURR", how="left")
     fico = fico.merge(hist_feat, on="SK_ID_CURR", how="left")
 
-    # --- Fill missing and flag ---
-    fico.fillna({
-        "dpd_mean": 0, "dpd_max": 0, "on_time_ratio": 0,
-        "AMT_CREDIT_SUM": 0, "AMT_CREDIT_SUM_DEBT": 0,
-        "total_utilization": 0, "credit_card_utilization": 0, "aaoa_m": 0
-    }, inplace=True)
+    # --- Handle missing and invalid values ---
+    # Replace infinite values (from division by zero)
+    fico = fico.replace([np.inf, -np.inf], np.nan)
+
+    # Fill all remaining NaN with 0
+    fico = fico.fillna(0)
+
+    # Add thin file flag
     fico["thin_file_flag"] = (fico["AMT_CREDIT_SUM"] == 0).astype(int)
 
     return fico
+
 
 if __name__ == "__main__":
     app, bureau, install, credit = load_datasets()
