@@ -5,3 +5,4 @@ data/installments_payments.csv
 *.csv
 .venv
 *.parquet
+*.pkl
