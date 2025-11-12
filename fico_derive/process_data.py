@@ -1,6 +1,6 @@
 import pandas as pd
 
-def load_datasets(data_dir="./data"):
+def load_datasets(data_dir="../data"):
     """Load raw Home Credit datasets."""
     app = pd.read_csv(f"{data_dir}/application_train.csv")
     bureau = pd.read_csv(f"{data_dir}/bureau.csv")
