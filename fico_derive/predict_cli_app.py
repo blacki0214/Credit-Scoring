@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 
 # --- Load model and scaler ---
-model = joblib.load("./")
+model = joblib.load("../output/models/logistic_model.pkl")
 scaler = joblib.load("../output/models/scaler.pkl")
 
 print("💳 Credit Scoring CLI — Logistic Regression Baseline Model")

@@ -71,6 +71,6 @@ def derive_fico_features(app, bureau, install, credit=None):
 if __name__ == "__main__":
     app, bureau, install, credit = load_datasets()
     fico = derive_fico_features(app, bureau, install, credit)
-    fico.to_csv("./output/fico_style_features.csv", index=False)
+    fico.to_csv("../data/fico_style_features.csv", index=False)
     print("FICO-style feature table saved to fico_style_features.csv")
     print(fico.head())
