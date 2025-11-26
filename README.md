@@ -14,11 +14,11 @@
 
 This is a **complete loan approval system** that helps banks and financial institutions:
 
-✅ **Automatically approve or reject loans** based on customer information  
-✅ **Calculate credit scores** (300-850) from simple customer data  
-✅ **Determine loan amounts** customers can get in VND  
-✅ **Assess risk levels** (Low, Medium, High, Very High)  
-✅ **Provide instant decisions** - no manual review needed  
+**Automatically approve or reject loans** based on customer information  
+**Calculate credit scores** (300-850) from simple customer data  
+**Determine loan amounts** customers can get in VND  
+**Assess risk levels** (Low, Medium, High, Very High)  
+**Provide instant decisions** - no manual review needed  
 
 ### 💡 Perfect For
 
@@ -82,7 +82,7 @@ Credit-Scoring/
     └── API_GUIDE.md
 ```
 
-### 🎯 Where to Start?
+### Where to Start?
 
 1. **Want to use the API?** → Go to `credit-scoring-api/` folder
 2. **Want to understand the AI?** → Check `notebooks/` folder  
@@ -205,7 +205,7 @@ GET http://localhost:8000/api/model/info
 
 ---
 
-## 💻 Integration Examples
+## Integration Examples
 
 ### React/Next.js Example
 
@@ -268,7 +268,7 @@ print(f"Credit Score: {result['credit_score']}")
 
 ---
 
-## 🤖 The AI Behind It
+## The AI Behind It
 
 ### What Model We Use
 
@@ -303,7 +303,7 @@ Loan Decision (Approve/Reject + Amount)
 
 ---
 
-## 📊 Understanding the Data
+## Understanding the Data
 
 ### Input: Simple Customer Information
 
@@ -325,13 +325,13 @@ Only **11 easy fields** needed:
 
 The API returns **everything you need**:
 
-- ✅ **Approved or Rejected** - Clear decision
-- 💯 **Credit Score** - 300-850 (auto-calculated)
-- 💰 **Loan Amount in VND** - How much they can borrow
-- 📅 **Monthly Payment** - Exact payment in VND
-- 📊 **Interest Rate** - Based on credit score
-- ⚠️ **Risk Level** - Low/Medium/High/Very High
-- 📝 **Approval Message** - Human-readable explanation
+- **Approved or Rejected** - Clear decision
+- **Credit Score** - 300-850 (auto-calculated)
+- **Loan Amount in VND** - How much they can borrow
+- **Monthly Payment** - Exact payment in VND
+- **Interest Rate** - Based on credit score
+- **Risk Level** - Low/Medium/High/Very High
+- **Approval Message** - Human-readable explanation
 
 ---
 
@@ -475,9 +475,9 @@ showApprovalStats(results);
 
 ---
 
-## 🗺️ Roadmap
+## Roadmap
 
-### ✅ Completed
+### Completed
 - [x] AI model training (LightGBM)
 - [x] Feature engineering (13 → 64 features)
 - [x] REST API with FastAPI
@@ -488,47 +488,13 @@ showApprovalStats(results);
 - [x] All tests passing (10/10)
 - [x] Complete documentation
 
-### 🚧 Coming Soon
+### Coming Soon
 - [ ] React dashboard example
 - [ ] Mobile app integration guide
 - [ ] Real-time monitoring
 - [ ] A/B testing
 - [ ] Auto-model retraining
 - [ ] Multi-language support
-
----
-
-## ❓ FAQ
-
-### Q: Do I need to know machine learning to use this?
-**A:** No! Just call the API endpoints. The AI is already trained.
-
-### Q: Can I use this in production?
-**A:** Yes, but add authentication, rate limiting, and monitoring first.
-
-### Q: What currency does it support?
-**A:** Vietnamese Dong (VND) primarily. USD conversion built-in.
-
-### Q: How accurate is the AI?
-**A:** 72% ROC-AUC, catches 55% of bad loans, 45% precision.
-
-### Q: Can I retrain the model?
-**A:** Yes! Check notebooks in `notebooks/parquet_files/`
-
-### Q: Does it scale?
-**A:** Yes! Docker + async FastAPI = handles many requests.
-
----
-
-## 🤝 Contributing
-
-Want to improve this project? Great!
-
-1. **Fork** the repository
-2. **Create** your feature branch (`git checkout -b feature/AmazingFeature`)
-3. **Commit** your changes (`git commit -m 'Add some AmazingFeature'`)
-4. **Push** to the branch (`git push origin feature/AmazingFeature`)
-5. **Open** a Pull Request
 
 ---
 
@@ -561,13 +527,13 @@ MIT License - Free to use, modify, and distribute!
 **This is an educational/demo project.**
 
 For production use in real financial services:
-- ✅ Add user authentication
-- ✅ Implement rate limiting
-- ✅ Add encryption (HTTPS)
-- ✅ Comply with regulations (FCRA, GDPR, etc.)
-- ✅ Get legal and financial expert review
-- ✅ Add fraud detection
-- ✅ Implement audit logs
+- Add user authentication
+- Implement rate limiting
+- Add encryption (HTTPS)
+- Comply with regulations (FCRA, GDPR, etc.)
+- Get legal and financial expert review
+- Add fraud detection
+- Implement audit logs
 
 ---
 
@@ -592,5 +558,4 @@ docker-compose up -d
 ---
 
 **Last Updated**: November 26, 2025  
-**Version**: 2.0.0  
 **Status**: Production Ready ✅
