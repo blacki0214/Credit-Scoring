@@ -1,17 +1,17 @@
-# 🚀 Credit Scoring API - Simple & Fast
+# Credit Scoring API - Simple & Fast
 
 > **Production-ready loan approval API with VND support**
 
 ---
 
-## 🎯 What This API Does
+## What This API Does
 
 This is a **REST API** that instantly decides if customers get loans or not.
 
-✅ **Input:** Simple customer info (name, age, income, etc.)  
-✅ **Output:** Approved/rejected + credit score + loan amount in VND  
-✅ **Speed:** < 100ms response time  
-✅ **Accuracy:** 72% ROC-AUC on 300K+ loans  
+**Input:** Simple customer info (name, age, income, etc.)  
+**Output:** Approved/rejected + credit score + loan amount in VND  
+**Speed:** < 100ms response time  
+**Accuracy:** 72% ROC-AUC on 300K+ loans  
 
 ---
 
@@ -508,28 +508,6 @@ Final Score: 300-850
 
 ---
 
-## ❓ FAQ
-
-**Q: How do I get started?**  
-A: Run `docker-compose up -d` and open http://localhost:8000/api/docs
-
-**Q: What's the difference between `/api/apply` and `/api/credit-score`?**  
-A: `/api/apply` = full loan application. `/api/credit-score` = just calculate score
-
-**Q: Is this production-ready?**  
-A: Yes, but add authentication, rate limiting, and monitoring first.
-
-**Q: Can I change the interest rates?**  
-A: Yes, edit `app/services/request_converter.py` → `_get_interest_rate()`
-
-**Q: How accurate is the AI?**  
-A: 72% ROC-AUC, trained on 300K+ real loans
-
-**Q: Does it support other currencies?**  
-A: VND is primary, but you can change `VND_TO_USD_RATE` in `.env`
-
----
-
 ## 🐛 Troubleshooting
 
 ### API won't start
@@ -620,5 +598,4 @@ curl http://localhost:8000/api/health
 ---
 
 **Last Updated:** November 26, 2025  
-**Version:** 2.0.0  
 **Status:** Production Ready ✅
