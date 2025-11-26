@@ -1,32 +1,21 @@
-from fastapi import FastAPI
-from app.api.routes import router as api_router
+from fastapi import APIRouter
 from app.services.model_loader import model_loader
-from datetime import datetime
+from app.core.config import settings
 
-app = FastAPI()
-
-app.include_router(api_router, prefix="/api")
+router = APIRouter()
 
 
-@app.get("/health")
+@router.get("/health")
 async def health_check():
-    """
-    🏥 Health Check Endpoint
-
-    Check if API and models are running correctly
-    """
+    """Check API health status"""
     return {
         "status": "healthy",
-        "timestamp": datetime.now().isoformat(),
-        "models_loaded": True,
-        "lgbm_features": len(model_loader.lgbm_model.feature_name_),
-        "threshold": model_loader.metadata['models']['lightgbm']['threshold']
+        "version": settings.VERSION,
+        "models_loaded": model_loader.lgbm_model is not None
     }
 
 
-@app.get("/ping")
+@router.get("/ping")
 async def ping():
-    """
-    🏓 Simple Ping Endpoint
-    """
+    """🏓 Simple Ping Endpoint"""
     return {"message": "pong"}

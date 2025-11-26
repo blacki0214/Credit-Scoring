@@ -1,6 +1,7 @@
 from pydantic_settings import BaseSettings
 from typing import List
 from pathlib import Path
+import os
 
 
 class Settings(BaseSettings):
@@ -21,16 +22,25 @@ class Settings(BaseSettings):
         "*"  # Allow all (only for development)
     ]
     
-    # Model Paths
+    # Model Paths - Use relative paths that work in both Windows and Docker
     BASE_DIR: Path = Path(__file__).resolve().parent.parent.parent
-    MODEL_DIR: Path = BASE_DIR / "models"
-    LGBM_MODEL_PATH: Path = MODEL_DIR / "lgbm_model_optimized.pkl"
-    METADATA_PATH: Path = MODEL_DIR / "ensemble_comparison_metadata.pkl"
+    
+    @property
+    def MODEL_DIR(self) -> Path:
+        return self.BASE_DIR / "models"
+    
+    @property
+    def LGBM_MODEL_PATH(self) -> Path:
+        return self.MODEL_DIR / "lgb_model_optimized.pkl"
+    
+    @property
+    def METADATA_PATH(self) -> Path:
+        return self.MODEL_DIR / "ensemble_comparison_metadata.pkl"
     
     # Logging
     LOG_LEVEL: str = "INFO"
     
-    # Security (if needed)
+    # Security 
     SECRET_KEY: str = "your-secret-key-here-change-in-production"
     
     class Config:

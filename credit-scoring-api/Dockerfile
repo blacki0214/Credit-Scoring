@@ -1,4 +1,4 @@
-FROM python:3.9-slim
+FROM python:3.10-slim
 
 # Set working directory
 WORKDIR /app
@@ -23,7 +23,7 @@ COPY models/ ./models/
 # Expose port
 EXPOSE 8000
 
-# Health check
+# Health check - Use correct path with /api prefix
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8000/api/health || exit 1
 

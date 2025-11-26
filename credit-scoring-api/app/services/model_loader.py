@@ -1,7 +1,6 @@
 import joblib
-from pathlib import Path
-from app.core.config import settings
 import logging
+from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -11,29 +10,34 @@ class ModelLoader:
     
     def __new__(cls):
         if cls._instance is None:
-            cls._instance = super(ModelLoader, cls).__new__(cls)
+            cls._instance = super().__new__(cls)
+            cls._instance.lgbm_model = None
+            cls._instance.metadata = None
             cls._instance._load_models()
         return cls._instance
     
     def _load_models(self):
-        """Load ML models on initialization"""
+        """Load models from disk"""
         try:
-            logger.info("📦 Loading LightGBM model...")
+            logger.info(f"Loading LGBM model from {settings.LGBM_MODEL_PATH}")
             self.lgbm_model = joblib.load(settings.LGBM_MODEL_PATH)
-            logger.info("✅ LightGBM model loaded successfully")
             
-            logger.info("📦 Loading metadata...")
+            logger.info(f"Loading metadata from {settings.METADATA_PATH}")
             self.metadata = joblib.load(settings.METADATA_PATH)
-            logger.info("✅ Metadata loaded successfully")
             
-            # Log model info
-            logger.info(f"📊 Model features: {len(self.lgbm_model.feature_name_)}")
-            logger.info(f"🎯 Threshold: {self.metadata['models']['lightgbm']['threshold']:.3f}")
-            
+            logger.info("Models loaded successfully")
         except Exception as e:
-            logger.error(f"❌ Error loading models: {e}")
+            logger.error(f"Error loading models: {str(e)}")
             raise
+    
+    def is_loaded(self) -> bool:
+        """Check if models are loaded"""
+        return self.lgbm_model is not None and self.metadata is not None
+    
+    def get_metadata(self):
+        """Get model metadata"""
+        return self.metadata
 
 
-# Create singleton instance
+# Singleton instance
 model_loader = ModelLoader()
