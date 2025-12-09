@@ -2,7 +2,9 @@ from fastapi import APIRouter, HTTPException, status
 from app.models.schemas import PredictionRequest, PredictionResponse, LoanOfferResponse, SimpleLoanRequest, CreditScoreResponse
 from app.services.prediction_service import prediction_service
 from app.services.loan_offer_service import loan_offer_service
+from app.services.smart_loan_offer import SmartLoanOfferService
 from app.services.request_converter import request_converter
+from app.services.feature_engineering import FeatureEngineer
 import logging
 from typing import List
 
@@ -14,7 +16,7 @@ router = APIRouter()
 @router.post("/predict", response_model=PredictionResponse, status_code=status.HTTP_200_OK)
 async def predict_loan(request: PredictionRequest):
     """
-    🎯 Main Prediction Endpoint
+    Main Prediction Endpoint
     
     Predict loan default probability based on applicant information
     
@@ -41,17 +43,17 @@ async def predict_loan(request: PredictionRequest):
     - message: Risk assessment message
     """
     try:
-        logger.info(f"📥 Prediction request - Age: {request.person_age}, Income: {request.person_income}")
+        logger.info(f"Prediction request - Age: {request.person_age}, Income: {request.person_income}")
         
         # Get prediction
         result = prediction_service.predict(request)
         
-        logger.info(f"✅ Prediction complete: {result.risk_level} risk (probability: {result.probability:.2%})")
+        logger.info(f"Prediction complete: {result.risk_level} risk (probability: {result.probability:.2%})")
         
         return result
         
     except Exception as e:
-        logger.error(f"❌ Prediction error: {e}")
+        logger.error(f"Prediction error: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Prediction failed: {str(e)}"
@@ -214,10 +216,16 @@ async def batch_loan_offers(requests: List[PredictionRequest]):
 @router.post("/apply", response_model=LoanOfferResponse, status_code=status.HTTP_200_OK)
 async def apply_for_loan(application: SimpleLoanRequest):
     """
-    🎯 Simple Loan Application Endpoint (Customer-Friendly)
+    Smart Loan Recommendation Endpoint
     
-    Apply for a loan with simple, customer-friendly information.
-    The system will automatically calculate credit score and other internal metrics.
+    Get personalized loan recommendation based on your profile.
+    The system automatically:
+    1. Calculates your credit score
+    2. Determines your loan tier (PLATINUM/GOLD/SILVER/BRONZE)
+    3. Recommends maximum loan amount you qualify for
+    4. Assesses risk and sets interest rate
+    
+    **NO NEED to specify loan amount** - the system calculates the maximum you can safely borrow!
     
     **Request Body:**
     - full_name: Customer's full name
@@ -226,55 +234,68 @@ async def apply_for_loan(application: SimpleLoanRequest):
     - employment_status: EMPLOYED, SELF_EMPLOYED, or UNEMPLOYED
     - years_employed: Years in current employment
     - home_ownership: RENT, OWN, MORTGAGE, or LIVING_WITH_PARENTS
-    - loan_amount: Requested loan amount in VND
-    - loan_purpose: PERSONAL, EDUCATION, MEDICAL, BUSINESS, HOME_IMPROVEMENT, or DEBT_CONSOLIDATION
+    - loan_purpose: HOME, CAR, BUSINESS, EDUCATION, MEDICAL, DEBT_CONSOLIDATION, HOME_IMPROVEMENT, or PERSONAL
     - years_credit_history: How many years have you had credit/loans? (0 if none)
     - has_previous_defaults: Have you ever defaulted on a loan? (true/false)
     - currently_defaulting: Are you currently in default? (true/false)
     
     **Returns:**
-    - approved: Whether loan is approved (true/false)
-    - loan_amount_vnd: Approved loan amount in VND
-    - requested_amount_vnd: Requested amount in VND
+    - approved: Whether you qualify for a loan (true/false)
+    - loan_amount_vnd: Maximum recommended loan amount in VND
     - max_amount_vnd: Maximum eligible amount in VND
     - interest_rate: Annual interest rate (%)
     - monthly_payment_vnd: Estimated monthly payment in VND
     - loan_term_months: Loan term in months
-    - credit_score: Calculated credit score
+    - credit_score: Your calculated credit score
     - risk_level: Risk assessment
+    - loan_tier: Your tier (PLATINUM/GOLD/SILVER/BRONZE)
+    - tier_reason: Why you were assigned this tier
     - approval_message: Detailed approval/rejection message
     
-    **Example:**
-    Send customer information and get instant loan decision!
-    All amounts in Vietnamese Dong (VND).
+    **Loan Tiers:**
+    - 🌟 PLATINUM: Best rates, highest amounts (4.5x+ annual income)
+    - 🥇 GOLD: Great rates, high amounts (3.5x annual income)
+    - 🥈 SILVER: Good rates, moderate amounts (2.5x annual income)
+    - 🥉 BRONZE: Standard rates, conservative amounts (1.5x annual income)
     """
     try:
-        logger.info(f"🎯 Loan application from: {application.full_name}, Amount: {application.loan_amount:,.0f} VND")
+        logger.info(f"🎯 Smart loan application from: {application.full_name}, Purpose: {application.loan_purpose}")
         
-        # Convert simple request to internal format
+        # Convert simple request to full internal format
         internal_request = request_converter.convert_simple_to_prediction(application)
         
         logger.info(f"📊 Calculated credit score: {internal_request.credit_score}")
         
-        # Get risk prediction
-        prediction_result = prediction_service.predict(internal_request)
+        # Calculate annual income
+        annual_income_vnd = application.monthly_income * 12
         
-        # Calculate loan offer
-        offer = loan_offer_service.calculate_offer(
-            request=internal_request,
-            probability=prediction_result.probability,
-            risk_level=prediction_result.risk_level
+        # Generate smart loan offer with tier-based calculation
+        smart_service = SmartLoanOfferService()
+        offer = smart_service.generate_offer(
+            request_dict=internal_request.model_dump(),
+            age=application.age,
+            years_employed=application.years_employed,
+            employment_status=application.employment_status,
+            home_ownership=application.home_ownership,
+            loan_purpose=application.loan_purpose,
+            annual_income_vnd=annual_income_vnd,
+            monthly_income_vnd=application.monthly_income,
+            credit_score=internal_request.credit_score
         )
         
-        logger.info(f"✅ Application processed: Approved={offer.approved}, Amount={offer.loan_amount_vnd:,.0f} VND, Score={offer.credit_score}")
+        logger.info(
+            f"✅ Application processed: Tier={offer['loan_tier']}, "
+            f"Approved={offer['approved']}, Amount={offer['loan_amount_vnd']:,.0f} VND, "
+            f"Score={offer['credit_score']}"
+        )
         
         return offer
         
     except Exception as e:
-        logger.error(f"❌ Loan application error: {e}")
+        logger.error(f"❌ Smart loan application error: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Loan application processing failed: {str(e)}"
+            detail=f"Smart loan recommendation failed: {str(e)}"
         )
 
 
@@ -293,8 +314,7 @@ async def calculate_credit_score(application: SimpleLoanRequest):
     - employment_status: EMPLOYED, SELF_EMPLOYED, or UNEMPLOYED
     - years_employed: Years in current employment
     - home_ownership: RENT, OWN, MORTGAGE, or LIVING_WITH_PARENTS
-    - loan_amount: Requested loan amount in VND (used for debt-to-income ratio)
-    - loan_purpose: PERSONAL, EDUCATION, MEDICAL, etc.
+    - loan_purpose: Loan purpose (used for context only)
     - years_credit_history: How many years have you had credit/loans?
     - has_previous_defaults: Have you ever defaulted on a loan?
     - currently_defaulting: Are you currently in default?
@@ -315,6 +335,9 @@ async def calculate_credit_score(application: SimpleLoanRequest):
     try:
         logger.info(f"📊 Credit score calculation for: {application.full_name}")
         
+        # For credit score calculation, use a standard 3-year personal loan as reference
+        reference_loan_amount = application.monthly_income * 12 * 2  # 2x annual income
+        
         # Get detailed score breakdown
         score_details = request_converter.calculate_credit_score_with_breakdown(
             application.age,
@@ -325,7 +348,7 @@ async def calculate_credit_score(application: SimpleLoanRequest):
             application.employment_status,
             application.has_previous_defaults,
             application.currently_defaulting,
-            application.loan_amount
+            reference_loan_amount
         )
         
         # Convert to internal format to get loan grade
