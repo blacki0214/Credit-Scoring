@@ -15,7 +15,7 @@ This is a **REST API** that instantly decides if customers get loans or not.
 
 ---
 
-## ⚡ Quick Start (30 Seconds)
+## Quick Start (30 Seconds)
 
 ### Step 1: Run with Docker
 
@@ -25,27 +25,27 @@ docker-compose up -d
 
 ### Step 2: Open Browser
 
-Go to: **http://localhost:8000/api/docs**
+Go to: **https://credit-scoring-h7mv.onrender.com/docs**
 
 ### Step 3: Test It!
 
 Click "Try it out" on any endpoint and click "Execute"
 
-**That's it! You're done!** 🎉
+**That's it! You're done!** 
 
 ---
 
-## 📡 API Endpoints (4 Total)
+## API Endpoints (4 Total)
 
-### 🌟 1. `/api/apply` - Customer Loan Application
+### 1. `/api/apply` - Customer Loan Application
 
-**👉 USE THIS FOR YOUR APP**
+**USE THIS FOR YOUR APP**
 
 Simple, customer-friendly endpoint that does everything automatically.
 
 **Request:**
 ```json
-POST http://localhost:8000/api/apply
+POST https://credit-scoring-h7mv.onrender.com/docs#/Prediction/apply_for_loan_api_apply_post
 {
   "full_name": "Nguyen Van A",
   "age": 30,
@@ -76,16 +76,16 @@ POST http://localhost:8000/api/apply
 ```
 
 **Why use this?**
-- ✅ No complex calculations needed
-- ✅ Auto-calculates credit score
-- ✅ Returns everything in VND
-- ✅ Customer-friendly fields
+- No complex calculations needed
+- Auto-calculates credit score
+- Returns everything in VND
+- Customer-friendly fields
 
 ---
 
-### 📊 2. `/api/credit-score` - Credit Score Calculator
+### 2. `/api/credit-score` - Credit Score Calculator
 
-**👉 USE THIS FOR DASHBOARDS**
+**USE THIS FOR DASHBOARDS**
 
 Get detailed credit score breakdown without applying for a loan.
 
@@ -114,10 +114,10 @@ Get detailed credit score breakdown without applying for a loan.
 ```
 
 **Why use this?**
-- ✅ Show customers their credit score
-- ✅ Explain how score is calculated
-- ✅ Track score improvements over time
-- ✅ Perfect for analytics
+- Show customers their credit score
+- Explain how score is calculated
+- Track score improvements over time
+- Perfect for analytics
 
 ---
 
@@ -126,7 +126,7 @@ Get detailed credit score breakdown without applying for a loan.
 **👉 CHECK IF API IS RUNNING**
 
 ```json
-GET http://localhost:8000/api/health
+GET https://credit-scoring-h7mv.onrender.com/docs#/Health/health_check_api_health_get
 
 Response:
 {
@@ -143,7 +143,7 @@ Response:
 **👉 GET AI MODEL DETAILS**
 
 ```json
-GET http://localhost:8000/api/model/info
+GET https://credit-scoring-h7mv.onrender.com/docs#/Model%20Info/get_model_features_api_model_features_get
 
 Response:
 {
@@ -158,13 +158,13 @@ Response:
 
 ---
 
-## 💻 Integration Examples
+## Integration Examples
 
 ### React/Next.js
 
 ```javascript
 async function applyForLoan(customerData) {
-  const response = await fetch('http://localhost:8000/api/apply', {
+  const response = await fetch('https://credit-scoring-h7mv.onrender.com/docs#/Prediction/apply_for_loan_api_apply_post', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(customerData)
@@ -173,11 +173,11 @@ async function applyForLoan(customerData) {
   const result = await response.json();
   
   if (result.approved) {
-    console.log(`✅ Approved! Score: ${result.credit_score}`);
-    console.log(`💰 Amount: ${result.loan_amount_vnd.toLocaleString('vi-VN')} VND`);
-    console.log(`📅 Monthly: ${result.monthly_payment_vnd.toLocaleString('vi-VN')} VND`);
+    console.log(`Approved! Score: ${result.credit_score}`);
+    console.log(`Amount: ${result.loan_amount_vnd.toLocaleString('vi-VN')} VND`);
+    console.log(`Monthly: ${result.monthly_payment_vnd.toLocaleString('vi-VN')} VND`);
   } else {
-    console.log('❌ Not approved:', result.approval_message);
+    console.log('Not approved:', result.approval_message);
   }
   
   return result;
@@ -208,19 +208,19 @@ import requests
 
 def apply_for_loan(customer_data):
     response = requests.post(
-        'http://localhost:8000/api/apply',
+        'https://credit-scoring-h7mv.onrender.com/docs#/Prediction/apply_for_loan_api_apply_post',
         json=customer_data
     )
     
     result = response.json()
     
     if result['approved']:
-        print(f"✅ Approved!")
+        print(f"Approved!")
         print(f"Credit Score: {result['credit_score']}")
         print(f"Amount: {result['loan_amount_vnd']:,.0f} VND")
         print(f"Monthly Payment: {result['monthly_payment_vnd']:,.0f} VND")
     else:
-        print(f"❌ Not approved: {result['approval_message']}")
+        print(f"Not approved: {result['approval_message']}")
     
     return result
 
@@ -245,7 +245,7 @@ apply_for_loan(customer)
 ### cURL
 
 ```bash
-curl -X POST "http://localhost:8000/api/apply" \
+curl -X POST "https://credit-scoring-h7mv.onrender.com/docs#/Prediction/apply_for_loan_api_apply_post" \
   -H "Content-Type: application/json" \
   -d '{
     "full_name": "Nguyen Van A",
@@ -264,7 +264,7 @@ curl -X POST "http://localhost:8000/api/apply" \
 
 ---
 
-## 📋 Input Fields Explained
+## Input Fields Explained
 
 | Field | Type | Description | Example |
 |-------|------|-------------|---------|
@@ -282,7 +282,7 @@ curl -X POST "http://localhost:8000/api/apply" \
 
 ---
 
-## 📤 Output Fields Explained
+## Output Fields Explained
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -299,7 +299,7 @@ curl -X POST "http://localhost:8000/api/apply" \
 
 ---
 
-## 🏗️ Project Structure
+## Project Structure
 
 ```
 credit-scoring-api/
@@ -339,7 +339,7 @@ credit-scoring-api/
 
 ---
 
-## 🐳 Docker Commands
+## Docker Commands
 
 ### Start
 ```bash
@@ -364,9 +364,9 @@ docker-compose down
 
 ---
 
-## 🧪 Testing
+## Testing
 
-All tests passing! ✅ 10/10
+All tests passing! 10/10
 
 ```bash
 # Run all tests
@@ -380,18 +380,18 @@ pytest tests/test_api.py -v
 ```
 
 **Test Coverage:**
-- ✅ Health endpoint
-- ✅ Model info endpoint
-- ✅ Predictions
-- ✅ Loan offers
-- ✅ Credit score calculation
-- ✅ Customer applications
-- ✅ Error handling
-- ✅ Input validation
+- Health endpoint
+- Model info endpoint
+- Predictions
+- Loan offers
+- Credit score calculation
+- Customer applications
+- Error handling
+- Input validation
 
 ---
 
-## ⚙️ Configuration
+## Configuration
 
 ### Environment Variables (.env)
 
@@ -416,7 +416,7 @@ PORT=8000
 
 ---
 
-## 📊 How It Works
+## How It Works
 
 ### The Flow
 
@@ -452,7 +452,7 @@ Final Score: 300-850
 
 ---
 
-## 🎯 Business Rules
+## Business Rules
 
 ### Approval Decision
 - **Approved** if default risk < 30%
@@ -475,7 +475,7 @@ Final Score: 300-850
 
 ---
 
-## 📈 Performance
+## Performance
 
 | Metric | Value | Description |
 |--------|-------|-------------|
@@ -487,7 +487,7 @@ Final Score: 300-850
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 - **FastAPI 0.104** - Web framework
 - **LightGBM** - AI model
@@ -499,16 +499,16 @@ Final Score: 300-850
 
 ---
 
-## 📚 Documentation Links
+## Documentation Links
 
-- **Interactive API Docs:** http://localhost:8000/api/docs
+- **Interactive API Docs:** https://credit-scoring-h7mv.onrender.com/doc
 - **Customer Guide:** [CUSTOMER_API_GUIDE.md](CUSTOMER_API_GUIDE.md)
 - **Dashboard Guide:** [DASHBOARD_GUIDE.md](DASHBOARD_GUIDE.md)
 - **Main Project:** [../README.md](../README.md)
 
 ---
 
-## 🐛 Troubleshooting
+## Troubleshooting
 
 ### API won't start
 ```bash
@@ -539,7 +539,7 @@ pytest tests/ -v
 
 ---
 
-## 🚀 Deployment
+## Deployment
 
 ### Docker (Recommended)
 ```bash
@@ -566,13 +566,13 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000
 
 ---
 
-## 📄 License
+## License
 
 MIT License - Free to use!
 
 ---
 
-## 👨‍💻 Author
+## Author
 
 **Nguyen Van Quoc**
 - Email: vanquoc11082004@gmail.com
@@ -580,22 +580,22 @@ MIT License - Free to use!
 
 ---
 
-## 🎉 Ready to Use!
+## Ready to Use!
 
 ```bash
 # 1. Start
 docker-compose up -d
 
 # 2. Test
-curl http://localhost:8000/api/health
+curl https://credit-scoring-h7mv.onrender.com/docs#/Health/health_check_api_health_get
 
 # 3. Open docs
-# http://localhost:8000/api/docs
+# https://credit-scoring-h7mv.onrender.com/docs
 
-# 4. Start building! 🚀
+# 4. Start building! 
 ```
 
 ---
 
-**Last Updated:** November 26, 2025  
-**Status:** Production Ready ✅
+**Last Updated:** December 15, 2025  
+**Status:** Production Ready 

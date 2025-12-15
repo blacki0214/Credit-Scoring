@@ -1,4 +1,4 @@
-# 📊 Dashboard Integration Guide
+# Dashboard Integration Guide
 
 ## Credit Score Endpoint for Analytics
 
@@ -8,7 +8,7 @@
 
 ---
 
-## 🎯 Use Cases
+## Use Cases
 
 ✅ **Customer Dashboard** - Show credit score to users  
 ✅ **Credit Score Tracking** - Track improvements over time  
@@ -18,7 +18,7 @@
 
 ---
 
-## 📋 Request Example
+## Request Example
 
 ```json
 {
@@ -38,7 +38,7 @@
 
 ---
 
-## ✅ Response Example
+## Response Example
 
 ```json
 {
@@ -63,7 +63,7 @@
 
 ---
 
-## 📊 Score Breakdown Explained
+## Score Breakdown Explained
 
 | Factor | Description | Range |
 |--------|-------------|-------|
@@ -80,7 +80,7 @@
 
 ---
 
-## 💡 Dashboard Examples
+## Dashboard Examples
 
 ### React Credit Score Dashboard
 
@@ -95,7 +95,7 @@ const CreditScoreDashboard = ({ customerData }) => {
   const fetchCreditScore = async () => {
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:8000/api/credit-score', {
+      const response = await fetch('https://credit-scoring-h7mv.onrender.com/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(customerData),
@@ -206,14 +206,14 @@ const CreditScoreDashboard = ({ customerData }) => {
               <tr className="negative">
                 <td>Vỡ nợ</td>
                 <td>{scoreData.score_breakdown.defaults_adjustment}</td>
-                <td>❌ Tiêu cực</td>
+                <td>Tiêu cực</td>
               </tr>
             )}
             {scoreData.score_breakdown.debt_to_income_adjustment < 0 && (
               <tr className="negative">
                 <td>Nợ/Thu nhập</td>
                 <td>{scoreData.score_breakdown.debt_to_income_adjustment}</td>
-                <td>⚠️ Cảnh báo</td>
+                <td>Cảnh báo</td>
               </tr>
             )}
           </tbody>
@@ -228,7 +228,7 @@ const CreditScoreDashboard = ({ customerData }) => {
 
       {/* Improvement Tips */}
       <div className="improvement-tips">
-        <h3>💡 Cách Cải Thiện Điểm Tín Dụng</h3>
+        <h3>Cách Cải Thiện Điểm Tín Dụng</h3>
         <ul>
           {scoreData.score_breakdown.age_adjustment < 50 && (
             <li>Điểm sẽ tự động tăng khi bạn già hơn</li>
@@ -246,7 +246,7 @@ const CreditScoreDashboard = ({ customerData }) => {
             <li>Xây dựng lịch sử tín dụng lâu hơn</li>
           )}
           {scoreData.score_breakdown.defaults_adjustment < 0 && (
-            <li className="critical">⚠️ Thanh toán đầy đủ các khoản nợ hiện tại</li>
+            <li className="critical">Thanh toán đầy đủ các khoản nợ hiện tại</li>
           )}
           {scoreData.score_breakdown.debt_to_income_adjustment < 0 && (
             <li>Giảm tỷ lệ nợ so với thu nhập</li>
@@ -263,7 +263,7 @@ const getImpact = (value, max) => {
   if (percentage >= 80) return '⭐⭐⭐ Rất tốt';
   if (percentage >= 60) return '⭐⭐ Tốt';
   if (percentage >= 40) return '⭐ Trung bình';
-  return '⚠️ Cần cải thiện';
+  return 'Cần cải thiện';
 };
 
 export default CreditScoreDashboard;
@@ -278,7 +278,7 @@ import streamlit as st
 import requests
 import plotly.graph_objects as go
 
-st.title("🏦 Bảng Điểm Tín Dụng")
+st.title("Bảng Điểm Tín Dụng")
 
 # Customer input form
 with st.form("customer_form"):
@@ -305,7 +305,7 @@ with st.form("customer_form"):
 if submitted:
     # Call API
     response = requests.post(
-        "http://localhost:8000/api/credit-score",
+        "https://credit-scoring-h7mv.onrender.com/",
         json={
             "full_name": full_name,
             "age": age,
@@ -356,7 +356,7 @@ if submitted:
     col3.metric("Mức Rủi ro", data['risk_level'])
     
     # Score breakdown
-    st.subheader("📊 Chi Tiết Tính Điểm")
+    st.subheader("Chi Tiết Tính Điểm")
     breakdown = data['score_breakdown']
     
     df_breakdown = {
@@ -390,7 +390,7 @@ if submitted:
 
 ---
 
-## 📈 Sample Test Cases
+## Sample Test Cases
 
 ### Excellent Customer (Score: 850)
 ```json
@@ -448,7 +448,7 @@ if submitted:
 
 ---
 
-## 🎨 Visualization Ideas
+## Visualization Ideas
 
 ### 1. Credit Score Gauge
 - Show score 300-850 with color-coded ranges
@@ -494,7 +494,7 @@ Display:
 
 ---
 
-## ✅ Benefits
+## Benefits
 
 1. **Transparent Scoring** - Customers see exactly how score is calculated
 2. **Actionable Insights** - Know what to improve
@@ -504,11 +504,11 @@ Display:
 
 ---
 
-## 🚀 Ready to Use!
+## Ready to Use!
 
 Your credit score endpoint is live at:
 ```
-http://localhost:8000/api/credit-score
+https://credit-scoring-h7mv.onrender.com/
 ```
 
-Perfect for building customer dashboards and analytics! 📊
+Perfect for building customer dashboards and analytics! 

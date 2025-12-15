@@ -1,10 +1,10 @@
-# 🎯 Customer-Friendly Loan Application API
+# Customer-Friendly Loan Application API
 
 ## Simple Loan Application Endpoint
 
 **Endpoint:** `/api/apply`  
 **Method:** POST  
-**URL:** `http://localhost:8000/api/apply`
+**URL:** `https://credit-scoring-h7mv.onrender.com/`
 
 This is the **recommended endpoint** for customer-facing applications. It uses simple, customer-friendly fields and automatically calculates credit scores.
 
@@ -12,15 +12,15 @@ This is the **recommended endpoint** for customer-facing applications. It uses s
 
 ## ✨ Why Use This Endpoint?
 
-✅ **Customer-friendly** - No technical jargon  
-✅ **Auto-calculated credit score** - Customers don't need to know their score  
-✅ **Simple questions** - Easy yes/no questions  
-✅ **VND currency** - All amounts in Vietnamese Dong  
-✅ **Instant decision** - Get approval/rejection immediately  
+**Customer-friendly** - No technical jargon  
+**Auto-calculated credit score** - Customers don't need to know their score  
+**Simple questions** - Easy yes/no questions  
+**VND currency** - All amounts in Vietnamese Dong  
+**Instant decision** - Get approval/rejection immediately  
 
 ---
 
-## 📋 Request Example
+## Request Example
 
 ```json
 {
@@ -40,7 +40,7 @@ This is the **recommended endpoint** for customer-facing applications. It uses s
 
 ---
 
-## 📝 Request Fields
+## Request Fields
 
 | Field | Type | Description | Values |
 |-------|------|-------------|--------|
@@ -58,7 +58,7 @@ This is the **recommended endpoint** for customer-facing applications. It uses s
 
 ---
 
-## ✅ Response Example
+## Response Example
 
 ```json
 {
@@ -77,7 +77,7 @@ This is the **recommended endpoint** for customer-facing applications. It uses s
 
 ---
 
-## 🔍 How Credit Score is Calculated
+## How Credit Score is Calculated
 
 The system automatically calculates credit score (300-850) based on:
 
@@ -104,7 +104,7 @@ The system automatically calculates credit score (300-850) based on:
 
 ```javascript
 async function applyForLoan(customerData) {
-  const response = await fetch('http://localhost:8000/api/apply', {
+  const response = await fetch('https://credit-scoring-h7mv.onrender.com/', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -127,12 +127,12 @@ async function applyForLoan(customerData) {
   const result = await response.json();
   
   if (result.approved) {
-    console.log('✅ APPROVED!');
+    console.log('APPROVED!');
     console.log(`Loan Amount: ${result.loan_amount_vnd.toLocaleString('vi-VN')} VND`);
     console.log(`Credit Score: ${result.credit_score}`);
     console.log(`Monthly Payment: ${result.monthly_payment_vnd.toLocaleString('vi-VN')} VND`);
   } else {
-    console.log('❌ Not approved');
+    console.log('Not approved');
     console.log(result.approval_message);
   }
   
@@ -147,7 +147,7 @@ import requests
 
 def apply_for_loan(customer_data):
     response = requests.post(
-        'http://localhost:8000/api/apply',
+        'https://credit-scoring-h7mv.onrender.com/',
         json={
             'full_name': customer_data['full_name'],
             'age': customer_data['age'],
@@ -166,19 +166,19 @@ def apply_for_loan(customer_data):
     result = response.json()
     
     if result['approved']:
-        print(f"✅ APPROVED for {result['full_name']}")
+        print(f"APPROVED for {result['full_name']}")
         print(f"Amount: {result['loan_amount_vnd']:,.0f} VND")
         print(f"Credit Score: {result['credit_score']}")
         print(f"Monthly: {result['monthly_payment_vnd']:,.0f} VND")
     else:
-        print(f"❌ Not approved: {result['approval_message']}")
+        print(f"Not approved: {result['approval_message']}")
     
     return result
 ```
 
 ---
 
-## 📱 Simple Form Example
+## Simple Form Example
 
 Here's how to collect customer information in a user-friendly form:
 
@@ -282,7 +282,7 @@ const LoanApplicationForm = () => {
 ## 🧪 Test with cURL
 
 ```bash
-curl -X POST "http://localhost:8000/api/apply" \
+curl -X POST "https://credit-scoring-h7mv.onrender.com/" \
   -H "Content-Type: application/json" \
   -d '{
     "full_name": "Nguyen Van A",
@@ -301,7 +301,7 @@ curl -X POST "http://localhost:8000/api/apply" \
 
 ---
 
-## 📊 Comparison: Old vs New Endpoint
+## Comparison: Old vs New Endpoint
 
 | Feature | Old `/api/loan-offer` | New `/api/apply` |
 |---------|----------------------|------------------|
@@ -310,12 +310,12 @@ curl -X POST "http://localhost:8000/api/apply" \
 | **Loan Grade** | Customer must provide | Auto-calculated |
 | **Interest Rate** | Customer must provide | Auto-calculated |
 | **Currency** | USD (converted to VND) | Direct VND |
-| **User-friendly** | ❌ No | ✅ Yes |
+| **User-friendly** | No | Yes |
 | **Recommended** | For advanced use | **For customers** |
 
 ---
 
-## 💼 Business Logic
+## Business Logic
 
 ### Approval Rules
 - **Approved** if calculated default risk < 30%
@@ -337,7 +337,7 @@ curl -X POST "http://localhost:8000/api/apply" \
 
 ---
 
-## 🎉 Benefits
+## Benefits
 
 1. **No technical knowledge needed** - Customers answer simple questions
 2. **Automatic credit assessment** - System calculates everything
@@ -347,7 +347,7 @@ curl -X POST "http://localhost:8000/api/apply" \
 
 ---
 
-## 🔄 Migration Guide
+## Migration Guide
 
 If you're using the old `/api/loan-offer` endpoint:
 
@@ -376,13 +376,13 @@ If you're using the old `/api/loan-offer` endpoint:
 
 ---
 
-## ✅ Ready to Use!
+## Ready to Use!
 
 Your app can now provide a **much better user experience** with:
-- ✅ Simple, clear questions
-- ✅ No confusing technical terms
-- ✅ Automatic credit scoring
-- ✅ All amounts in VND
-- ✅ Instant loan decisions
+- Simple, clear questions
+- No confusing technical terms
+- Automatic credit scoring
+- All amounts in VND
+- Instant loan decisions
 
 Start using `/api/apply` today!

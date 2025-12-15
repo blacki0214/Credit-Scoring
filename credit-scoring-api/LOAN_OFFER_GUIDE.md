@@ -8,11 +8,11 @@ Your app can now get loan approval decisions with amounts in Vietnamese Dong (VN
 
 **Method:** POST
 
-**URL:** `http://localhost:8000/api/loan-offer`
+**URL:** `https://credit-scoring-h7mv.onrender.com/docs#/Prediction/get_loan_offer_api_loan_offer_post`
 
 ---
 
-## 📋 Request Example
+## Request Example
 
 ```json
 {
@@ -36,7 +36,7 @@ Your app can now get loan approval decisions with amounts in Vietnamese Dong (VN
 
 ---
 
-## ✅ Response Example (Approved)
+## Response Example (Approved)
 
 ```json
 {
@@ -55,7 +55,7 @@ Your app can now get loan approval decisions with amounts in Vietnamese Dong (VN
 
 ---
 
-## ❌ Response Example (Rejected)
+## Response Example (Rejected)
 
 ```json
 {
@@ -74,7 +74,7 @@ Your app can now get loan approval decisions with amounts in Vietnamese Dong (VN
 
 ---
 
-## 🔑 Response Fields Explanation
+## Response Fields Explanation
 
 | Field | Description |
 |-------|-------------|
@@ -91,13 +91,13 @@ Your app can now get loan approval decisions with amounts in Vietnamese Dong (VN
 
 ---
 
-## 📱 Frontend Integration Examples
+## Frontend Integration Examples
 
 ### JavaScript/React
 
 ```javascript
 async function getLoanOffer(applicationData) {
-  const response = await fetch('http://localhost:8000/api/loan-offer', {
+  const response = await fetch('https://credit-scoring-h7mv.onrender.com/docs#/Prediction/get_loan_offer_api_loan_offer_post', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -108,11 +108,11 @@ async function getLoanOffer(applicationData) {
   const offer = await response.json();
   
   if (offer.approved) {
-    console.log(`✅ Loan Approved: ${offer.loan_amount_vnd.toLocaleString()} VND`);
+    console.log(`Loan Approved: ${offer.loan_amount_vnd.toLocaleString()} VND`);
     console.log(`Credit Score: ${offer.credit_score}`);
     console.log(`Monthly Payment: ${offer.monthly_payment_vnd.toLocaleString()} VND`);
   } else {
-    console.log(`❌ Loan Rejected: ${offer.approval_message}`);
+    console.log(`Loan Rejected: ${offer.approval_message}`);
     console.log(`Credit Score: ${offer.credit_score}`);
   }
   
@@ -127,18 +127,18 @@ import requests
 
 def get_loan_offer(application_data):
     response = requests.post(
-        'http://localhost:8000/api/loan-offer',
+        'https://credit-scoring-h7mv.onrender.com/docs#/Prediction/get_loan_offer_api_loan_offer_post',
         json=application_data
     )
     
     offer = response.json()
     
     if offer['approved']:
-        print(f"✅ Loan Approved: {offer['loan_amount_vnd']:,.0f} VND")
+        print(f"Loan Approved: {offer['loan_amount_vnd']:,.0f} VND")
         print(f"Credit Score: {offer['credit_score']}")
         print(f"Monthly Payment: {offer['monthly_payment_vnd']:,.0f} VND")
     else:
-        print(f"❌ Loan Rejected: {offer['approval_message']}")
+        print(f"Loan Rejected: {offer['approval_message']}")
         print(f"Credit Score: {offer['credit_score']}")
     
     return offer
@@ -146,7 +146,7 @@ def get_loan_offer(application_data):
 
 ---
 
-## 🎯 Approval Logic
+## Approval Logic
 
 ### Risk Levels & Interest Rates
 
@@ -174,7 +174,7 @@ def get_loan_offer(application_data):
 
 ---
 
-## 📊 Batch Processing
+## Batch Processing
 
 Process multiple applications at once:
 
@@ -186,7 +186,7 @@ const applications = [
   { person_age: 45, person_income: 95000, ... }
 ];
 
-const response = await fetch('http://localhost:8000/api/batch-loan-offers', {
+const response = await fetch('https://credit-scoring-h7mv.onrender.com/docs#/Prediction/get_loan_offer_api_loan_offer_post', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify(applications),
@@ -200,7 +200,7 @@ console.log(`Total Amount: ${result.summary.total_approved_amount_vnd.toLocaleSt
 
 ---
 
-## 💡 Display Tips for Your App
+## Display Tips for Your App
 
 ### Show the Offer
 
@@ -208,7 +208,7 @@ console.log(`Total Amount: ${result.summary.total_approved_amount_vnd.toLocaleSt
 function displayOffer(offer) {
   if (offer.approved) {
     return `
-      ✅ APPROVED
+      APPROVED
       
       Credit Score: ${offer.credit_score}
       Loan Amount: ${offer.loan_amount_vnd.toLocaleString()} VND
@@ -220,7 +220,7 @@ function displayOffer(offer) {
     `;
   } else {
     return `
-      ❌ NOT APPROVED
+      NOT APPROVED
       
       Credit Score: ${offer.credit_score}
       ${offer.approval_message}
@@ -233,10 +233,10 @@ function displayOffer(offer) {
 
 ---
 
-## 🧪 Test the API
+## Test the API
 
 ```bash
-curl -X POST "http://localhost:8000/api/loan-offer" \
+curl -X POST "https://credit-scoring-h7mv.onrender.com/docs#/Prediction/get_loan_offer_api_loan_offer_post" \
   -H "Content-Type: application/json" \
   -d '{
     "person_age": 35,
@@ -257,7 +257,7 @@ curl -X POST "http://localhost:8000/api/loan-offer" \
 
 ---
 
-## 📝 Notes
+## Notes
 
 - **Currency conversion:** 1 USD = 25,000 VND (hardcoded, can be updated in `loan_offer_service.py`)
 - **Default loan term:** 36 months (can be customized)
@@ -270,9 +270,9 @@ curl -X POST "http://localhost:8000/api/loan-offer" \
 ## 🎉 Ready to Integrate!
 
 Your app can now:
-1. ✅ Collect customer information
-2. ✅ Send to `/api/loan-offer`
-3. ✅ Display approval status
-4. ✅ Show loan amount in VND
-5. ✅ Show monthly payment
-6. ✅ Provide clear approval/rejection message
+1. Collect customer information
+2. Send to `/api/loan-offer`
+3. Display approval status
+4. Show loan amount in VND
+5. Show monthly payment
+6. Provide clear approval/rejection message

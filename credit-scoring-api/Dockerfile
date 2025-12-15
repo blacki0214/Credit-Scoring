@@ -25,7 +25,7 @@ EXPOSE 8000
 
 # Health check - Use correct path with /api prefix
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8000/api/health || exit 1
+    CMD curl -f https://credit-scoring-h7mv.onrender.com/docs#/Health/health_check_api_health_get || exit 1
 
 # Run application
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

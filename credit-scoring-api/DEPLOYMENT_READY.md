@@ -1,41 +1,41 @@
-# ✅ Credit Scoring API - Ready for Production
+# Credit Scoring API - Ready for Production
 
-## 🎯 Summary of Fixes
+## Summary of Fixes
 
 All errors have been resolved and the API is now production-ready for Docker deployment!
 
 ### Issues Fixed:
 
-1. **✅ Type Checker Warnings in Tests**
+1. **Type Checker Warnings in Tests**
    - Added type ignore comment for intentional test case that validates missing fields
    - Tests are functioning correctly - warnings were false positives
 
-2. **✅ Environment Configuration**
+2. **Environment Configuration**
    - Created `.env` file with all required environment variables
    - Created `.env.example` template for easy deployment
    - Configured proper CORS settings
 
-3. **✅ Docker Configuration**
+3. **Docker Configuration**
    - Fixed healthcheck endpoint path (`/api/health`)
    - Created `.dockerignore` for optimal build size
    - Verified docker-compose configuration
 
-4. **✅ Dependencies**
+4. **Dependencies**
    - Added `requests` library to requirements.txt
    - All dependencies properly pinned
 
-5. **✅ Circular Import Issues**
+5. **Circular Import Issues**
    - Fixed circular import in `health.py` route
    - All imports properly structured
 
-6. **✅ Documentation & Scripts**
+6. **Documentation & Scripts**
    - Created comprehensive `DOCKER_GUIDE.md`
    - Added startup scripts (`start.bat` for Windows, `start.sh` for Linux/Mac)
    - Created `test_api.py` for automated API testing
 
 ---
 
-## 🚀 How to Run
+## How to Run
 
 ### Quick Start (Windows):
 
@@ -66,24 +66,24 @@ python test_api.py
 
 ---
 
-## 📋 Verification Checklist
+## Verification Checklist
 
-- ✅ All Python syntax errors fixed
-- ✅ All imports working correctly
-- ✅ Docker configuration optimized
-- ✅ Health check endpoint configured
-- ✅ Environment variables set
-- ✅ CORS configured for cross-origin requests
-- ✅ Model files present in `/models` directory
-- ✅ Comprehensive error handling
-- ✅ Logging configured
-- ✅ API documentation available at `/docs`
-- ✅ Test suite available
-- ✅ Startup scripts created
+- All Python syntax errors fixed
+- All imports working correctly
+- Docker configuration optimized
+- Health check endpoint configured
+- Environment variables set
+- CORS configured for cross-origin requests
+- Model files present in `/models` directory
+- Comprehensive error handling
+- Logging configured
+- API documentation available at `/docs`
+- Test suite available
+- Startup scripts created
 
 ---
 
-## 🔌 API Endpoints
+## API Endpoints
 
 Once running, the API provides:
 
@@ -101,7 +101,7 @@ Once running, the API provides:
 
 ---
 
-## 🧪 Testing
+## Testing
 
 ### Automated Testing:
 
@@ -111,21 +111,21 @@ python test_api.py
 ```
 
 This will test:
-- ✅ Health check endpoint
-- ✅ Ping endpoint
-- ✅ Model info endpoint
-- ✅ Single predictions (low & high risk)
-- ✅ Batch predictions
-- ✅ Error handling (invalid requests)
+- Health check endpoint
+- Ping endpoint
+- Model info endpoint
+- Single predictions (low & high risk)
+- Batch predictions
+- Error handling (invalid requests)
 
 ### Manual Testing:
 
 ```bash
 # Health check
-curl http://localhost:8000/api/health
+curl https://credit-scoring-h7mv.onrender.com/docs#/Health/health_check_api_health_get
 
 # Make a prediction
-curl -X POST "http://localhost:8000/api/predict" \
+curl -X POST "https://credit-scoring-h7mv.onrender.com/docs#/Prediction/predict_loan_api_predict_post" \
   -H "Content-Type: application/json" \
   -d '{
     "person_age": 30,
@@ -146,7 +146,7 @@ curl -X POST "http://localhost:8000/api/predict" \
 
 ---
 
-## 📦 Project Structure
+## Project Structure
 
 ```
 credit-scoring-api/
@@ -176,7 +176,7 @@ credit-scoring-api/
 
 ---
 
-## 🔐 Security Notes
+## Security Notes
 
 For production deployment:
 
@@ -189,13 +189,13 @@ For production deployment:
 
 ---
 
-## 🌐 Integration with Frontend
+## Integration with Frontend
 
 The API is ready to integrate with any frontend framework:
 
 ### React/Next.js Example:
 ```javascript
-const response = await fetch('http://localhost:8000/api/predict', {
+const response = await fetch('https://credit-scoring-h7mv.onrender.com/docs#/Prediction/predict_loan_api_predict_post', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify(loanData)
@@ -208,7 +208,7 @@ const result = await response.json();
 import requests
 
 response = requests.post(
-    'http://localhost:8000/api/predict',
+    'https://credit-scoring-h7mv.onrender.com/docs#/Prediction/predict_loan_api_predict_post',
     json=loan_data
 )
 prediction = response.json()
@@ -216,7 +216,7 @@ prediction = response.json()
 
 ---
 
-## 📊 Expected Response Format
+## Expected Response Format
 
 ```json
 {
@@ -236,28 +236,27 @@ prediction = response.json()
 
 ---
 
-## 🎉 Ready for Deployment!
+## Ready for Deployment!
 
 Your Credit Scoring API is now:
-- ✅ **Error-free** and production-ready
-- ✅ **Dockerized** for easy deployment
-- ✅ **Documented** with comprehensive guides
-- ✅ **Tested** with automated test suite
-- ✅ **Optimized** for performance
-- ✅ **Secure** with configurable CORS
-- ✅ **Monitored** with health checks
+- **Error-free** and production-ready
+- **Dockerized** for easy deployment
+- **Documented** with comprehensive guides
+- **Tested** with automated test suite
+- **Optimized** for performance
+- **Secure** with configurable CORS
+- **Monitored** with health checks
 
 ### Next Steps:
 
 1. **Start the API**: Run `start.bat` (Windows) or `./start.sh` (Linux/Mac)
 2. **Test the API**: Run `python test_api.py`
-3. **View Documentation**: Open http://localhost:8000/docs
-4. **Integrate**: Connect your frontend application
+3. **View Documentation**: Open https://credit-scoring-h7mv.onrender.com/docs
 5. **Deploy**: Use the Docker image for cloud deployment
 
 ---
 
-## 📞 Support & Troubleshooting
+## Support & Troubleshooting
 
 **Common Issues:**
 
@@ -274,7 +273,7 @@ Your Credit Scoring API is now:
 
 4. **API not responding**
    - Wait 10-15 seconds after startup
-   - Check health: `curl http://localhost:8000/api/health`
+   - Check health: `curl https://credit-scoring-h7mv.onrender.com/docs#/Health/health_check_api_health_get`
 
 ---
 
