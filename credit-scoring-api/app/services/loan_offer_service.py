@@ -44,13 +44,28 @@ class LoanOfferService:
         # Convert USD to VND
         requested_amount_vnd = request.loan_amnt * USD_TO_VND
         income_vnd = request.person_income * USD_TO_VND
+        monthly_income_vnd = income_vnd / 12
         
-        # Determine approval
-        approved = probability < self.approval_threshold
+        # Calculate DTI ratio for the requested loan
+        estimated_monthly_payment = requested_amount_vnd / self.default_loan_term
+        dti_ratio = estimated_monthly_payment / monthly_income_vnd if monthly_income_vnd > 0 else 999
         
-        # Calculate max eligible amount based on income and risk
-        # Rule: Max loan = 5x annual income, adjusted by risk
-        base_max_amount = income_vnd * 5
+        # HARD REJECTION: DTI > 50% is unacceptable (can't pay loan with income)
+        if dti_ratio > 0.50:
+            approved = False
+            risk_level = "Very High"  # Override risk level
+        else:
+            # Determine approval based on default probability
+            approved = probability < self.approval_threshold
+        
+        # Calculate max eligible amount based on income, DTI, and risk
+        # Rule 1: Max loan = 5x annual income
+        # Rule 2: Monthly payment must be < 43% of monthly income (industry standard)
+        # Rule 3: Adjusted by risk level
+        income_based_max = income_vnd * 5
+        dti_based_max = monthly_income_vnd * 0.43 * self.default_loan_term  # 43% DTI limit
+        
+        base_max_amount = min(income_based_max, dti_based_max)
         risk_factor = self.loan_amount_factors.get(risk_level, 0.5)
         max_amount_vnd = base_max_amount * risk_factor
         
@@ -88,14 +103,15 @@ class LoanOfferService:
         return LoanOfferResponse(
             approved=approved,
             loan_amount_vnd=approved_amount_vnd,
-            requested_amount_vnd=requested_amount_vnd,
             max_amount_vnd=max_amount_vnd,
             interest_rate=interest_rate,
             monthly_payment_vnd=monthly_payment_vnd,
             loan_term_months=loan_term_months,
             credit_score=request.credit_score,
             risk_level=risk_level,
-            approval_message=approval_message
+            approval_message=approval_message,
+            loan_tier="LEGACY",
+            tier_reason="Using legacy /loan-offer endpoint"
         )
     
     def _calculate_monthly_payment(
@@ -134,7 +150,11 @@ class LoanOfferService:
                 return f"Loan partially approved. {risk_level} risk. Approved {approved_amount:,.0f} VND of {requested_amount:,.0f} VND requested."
         else:
             if risk_level == "Very High":
-                return f"Loan rejected. Very high default risk ({probability:.1%}). Unable to approve at this time."
+                # Check if it's a DTI issue (probability might still be low)
+                if probability < self.approval_threshold:
+                    return f"Loan rejected. Debt-to-income ratio too high. Monthly loan payment would exceed 50% of your income. Please request a smaller amount."
+                else:
+                    return f"Loan rejected. Very high default risk ({probability:.1%}). Unable to approve at this time."
             else:
                 return f"Loan rejected. Default risk ({probability:.1%}) exceeds approval threshold. Please improve credit profile and reapply."
 

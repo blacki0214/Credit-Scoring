@@ -15,10 +15,13 @@ class RequestConverter:
         
         # Convert VND to USD for internal processing
         annual_income_usd = (simple_req.monthly_income * 12) * VND_TO_USD
-        loan_amount_usd = simple_req.loan_amount * VND_TO_USD
+        
+        # Use a reference loan amount (2x annual income) since we calculate max loan separately
+        reference_loan_amount_vnd = simple_req.monthly_income * 12 * 2
+        loan_amount_usd = reference_loan_amount_vnd * VND_TO_USD
         
         # Calculate credit score based on customer profile
-        credit_score = self._calculate_credit_score(simple_req)
+        credit_score = self._calculate_credit_score(simple_req, reference_loan_amount_vnd)
         
         # Map employment status
         home_ownership_map = {
@@ -163,17 +166,30 @@ class RequestConverter:
             breakdown["defaults_adjustment"] = -80
         score += breakdown["defaults_adjustment"]
         
-        # Debt-to-income ratio
+        # Debt-to-income ratio (CRITICAL - Banks typically reject DTI > 43%)
         if monthly_income > 0:
             monthly_payment_estimate = loan_amount / 36
             dti_ratio = monthly_payment_estimate / monthly_income
             
-            if dti_ratio > 0.5:
+            # Extreme penalties for unrealistic loan amounts
+            if dti_ratio > 1.5:  # Loan payment > 150% of income (impossible!)
+                breakdown["debt_to_income_adjustment"] = -400
+            elif dti_ratio > 1.0:  # Loan payment > 100% of income
+                breakdown["debt_to_income_adjustment"] = -350
+            elif dti_ratio > 0.8:  # Loan payment > 80% of income
+                breakdown["debt_to_income_adjustment"] = -300
+            elif dti_ratio > 0.6:  # Loan payment > 60% of income
+                breakdown["debt_to_income_adjustment"] = -250
+            elif dti_ratio > 0.5:  # Loan payment > 50% of income (RED FLAG)
+                breakdown["debt_to_income_adjustment"] = -200
+            elif dti_ratio > 0.43:  # Standard bank limit
+                breakdown["debt_to_income_adjustment"] = -150
+            elif dti_ratio > 0.36:  # FHA limit
+                breakdown["debt_to_income_adjustment"] = -100
+            elif dti_ratio > 0.28:  # Recommended limit
                 breakdown["debt_to_income_adjustment"] = -50
-            elif dti_ratio > 0.4:
-                breakdown["debt_to_income_adjustment"] = -30
-            elif dti_ratio > 0.3:
-                breakdown["debt_to_income_adjustment"] = -10
+            elif dti_ratio > 0.20:
+                breakdown["debt_to_income_adjustment"] = -20
         score += breakdown["debt_to_income_adjustment"]
         
         # Final score
@@ -181,7 +197,7 @@ class RequestConverter:
         
         return breakdown
     
-    def _calculate_credit_score(self, req: SimpleLoanRequest) -> int:
+    def _calculate_credit_score(self, req: SimpleLoanRequest, reference_loan_amount: float) -> int:
         """Calculate estimated credit score based on customer profile"""
         
         breakdown = self.calculate_credit_score_with_breakdown(
@@ -193,7 +209,7 @@ class RequestConverter:
             req.employment_status,
             req.has_previous_defaults,
             req.currently_defaulting,
-            req.loan_amount
+            reference_loan_amount
         )
         
         return breakdown["final_score"]

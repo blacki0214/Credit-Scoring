@@ -64,7 +64,7 @@ class PredictionResult(BaseModel):
 
 
 class SimpleLoanRequest(BaseModel):
-    """Simplified customer-friendly loan request"""
+    """Simplified customer-friendly loan request - system calculates max loan automatically"""
     
     # Personal Information
     full_name: str = Field(..., description="Customer's full name")
@@ -76,9 +76,8 @@ class SimpleLoanRequest(BaseModel):
     # Residence Information
     home_ownership: str = Field(..., description="Home ownership (RENT, OWN, MORTGAGE, LIVING_WITH_PARENTS)")
     
-    # Loan Details
-    loan_amount: float = Field(..., description="Requested loan amount in VND", ge=0)
-    loan_purpose: str = Field(..., description="Loan purpose (PERSONAL, EDUCATION, MEDICAL, BUSINESS, HOME_IMPROVEMENT, DEBT_CONSOLIDATION)")
+    # Loan Details - NO AMOUNT NEEDED, system calculates it!
+    loan_purpose: str = Field(..., description="Loan purpose (PERSONAL, EDUCATION, MEDICAL, BUSINESS, HOME_IMPROVEMENT, DEBT_CONSOLIDATION, CAR, HOME)")
     
     # Credit History (Simple questions)
     years_credit_history: int = Field(0, description="How many years have you had credit/loans?", ge=0)
@@ -89,14 +88,13 @@ class SimpleLoanRequest(BaseModel):
         json_schema_extra = {
             "example": {
                 "full_name": "Nguyen Van A",
-                "age": 30,
-                "monthly_income": 15000000,
+                "age": 35,
+                "monthly_income": 20000000,
                 "employment_status": "EMPLOYED",
                 "years_employed": 5.0,
-                "home_ownership": "RENT",
-                "loan_amount": 100000000,
-                "loan_purpose": "PERSONAL",
-                "years_credit_history": 3,
+                "home_ownership": "MORTGAGE",
+                "loan_purpose": "HOME",
+                "years_credit_history": 5,
                 "has_previous_defaults": False,
                 "currently_defaulting": False
             }
@@ -149,29 +147,31 @@ class LoanOfferResponse(BaseModel):
     """Simplified loan offer response in VND"""
     
     approved: bool = Field(..., description="Whether the loan is approved")
-    loan_amount_vnd: float = Field(..., description="Approved loan amount in VND")
-    requested_amount_vnd: float = Field(..., description="Requested loan amount in VND")
+    loan_amount_vnd: float = Field(..., description="Maximum recommended loan amount in VND (calculated by system)")
     max_amount_vnd: float = Field(..., description="Maximum eligible loan amount in VND")
-    interest_rate: float = Field(..., description="Annual interest rate (%)")
+    interest_rate: Optional[float] = Field(None, description="Annual interest rate (%) - None if rejected")
     monthly_payment_vnd: Optional[float] = Field(None, description="Estimated monthly payment in VND")
     loan_term_months: Optional[int] = Field(None, description="Loan term in months")
     credit_score: int = Field(..., description="Customer's credit score (300-850)")
     risk_level: str = Field(..., description="Risk level (Low, Medium, High, Very High)")
     approval_message: str = Field(..., description="Approval or rejection message")
+    loan_tier: str = Field(..., description="Loan tier (PLATINUM, GOLD, SILVER, BRONZE, NONE)")
+    tier_reason: str = Field(..., description="Why this tier was assigned")
     
     class Config:
         json_schema_extra = {
             "example": {
                 "approved": True,
-                "loan_amount_vnd": 375000000,
-                "requested_amount_vnd": 375000000,
-                "max_amount_vnd": 500000000,
+                "loan_amount_vnd": 420000000,
+                "max_amount_vnd": 420000000,
                 "interest_rate": 8.5,
-                "monthly_payment_vnd": 11500000,
+                "monthly_payment_vnd": 13250000,
                 "loan_term_months": 36,
-                "credit_score": 720,
+                "credit_score": 750,
                 "risk_level": "Low",
-                "approval_message": "Loan approved! Low risk applicant."
+                "approval_message": "Loan approved. GOLD tier. Maximum recommended: 420,000,000 VND. Low risk at 8.5% APR.",
+                "loan_tier": "GOLD",
+                "tier_reason": "GOLD tier: prime earning age (30-50), 5+ years employment, mortgage holder - proven creditworthiness"
             }
         }
 
