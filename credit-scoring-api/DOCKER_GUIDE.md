@@ -1,6 +1,6 @@
 # Credit Scoring API - Quick Start Guide
 
-## 🚀 Running with Docker
+## Running with Docker
 
 ### Prerequisites
 - Docker and Docker Compose installed
@@ -26,22 +26,22 @@ docker-compose down
 
 The API will be available at: `http://localhost:8000`
 
-## 📚 API Documentation
+## API Documentation
 
 Once running, visit:
-- **Swagger UI**: http://localhost:8000/docs
-- **ReDoc**: http://localhost:8000/redoc
+- **Swagger UI**: https://credit-scoring-h7mv.onrender.com/docs
+- **ReDoc**: https://credit-scoring-h7mv.onrender.com/redoc
 
-## 🔌 API Endpoints
+## API Endpoints
 
 ### Health Check
 ```bash
-GET http://localhost:8000/api/health
+GET https://credit-scoring-h7mv.onrender.com/docs#/Health/health_check_api_health_get
 ```
 
 ### Make a Prediction
 ```bash
-POST http://localhost:8000/api/predict
+POST https://credit-scoring-h7mv.onrender.com/docs#/Prediction/predict_loan_api_predict_post
 Content-Type: application/json
 
 {
@@ -63,7 +63,7 @@ Content-Type: application/json
 
 ### Batch Predictions
 ```bash
-POST http://localhost:8000/api/batch-predict
+POST https://credit-scoring-h7mv.onrender.com/docs#/Prediction/batch_predict_api_batch_predict_post
 Content-Type: application/json
 
 [
@@ -74,20 +74,20 @@ Content-Type: application/json
 
 ### Model Information
 ```bash
-GET http://localhost:8000/api/model/info
-GET http://localhost:8000/api/model/features
+GET https://credit-scoring-h7mv.onrender.com/docs#/Model%20Info/get_model_info_api_model_info_get
+GET https://credit-scoring-h7mv.onrender.com/docs#/Model%20Info/get_model_features_api_model_features_get
 ```
 
-## 🧪 Testing the API
+## Testing the API
 
 ### Using cURL
 
 ```bash
 # Health check
-curl http://localhost:8000/api/health
+curl https://credit-scoring-h7mv.onrender.com/docs#/Health/health_check_api_health_get
 
 # Make a prediction
-curl -X POST "http://localhost:8000/api/predict" \
+curl -X POST "https://credit-scoring-h7mv.onrender.com/docs#/Prediction/predict_loan_api_predict_post" \
   -H "Content-Type: application/json" \
   -d '{
     "person_age": 30,
@@ -112,7 +112,7 @@ curl -X POST "http://localhost:8000/api/predict" \
 import requests
 
 # Health check
-response = requests.get("http://localhost:8000/api/health")
+response = requests.get("https://credit-scoring-h7mv.onrender.com/docs#/Health/health_check_api_health_get")
 print(response.json())
 
 # Make a prediction
@@ -132,11 +132,11 @@ data = {
     "previous_loan_defaults_on_file": "N"
 }
 
-response = requests.post("http://localhost:8000/api/predict", json=data)
+response = requests.post("https://credit-scoring-h7mv.onrender.com/docs#/Prediction/predict_loan_api_predict_post", json=data)
 print(response.json())
 ```
 
-## 🛠️ Development Mode
+## Development Mode
 
 ### Local Development (without Docker)
 
@@ -164,14 +164,14 @@ pytest
 pytest --cov=app tests/
 ```
 
-## 🔒 Security
+## Security
 
 1. **Change the SECRET_KEY** in `.env` file for production
 2. **Update ALLOWED_ORIGINS** to include only your frontend domains
 3. **Use HTTPS** in production
 4. **Add authentication** if needed (API keys, JWT, etc.)
 
-## 📊 Response Format
+## Response Format
 
 ### Prediction Response
 ```json
@@ -190,7 +190,7 @@ pytest --cov=app tests/
 - **High**: 0.50 ≤ probability < 0.75
 - **Very High**: probability ≥ 0.75
 
-## 🐛 Troubleshooting
+## Troubleshooting
 
 ### Container won't start
 ```bash
@@ -218,7 +218,7 @@ ports:
   - "8001:8000"  # Use port 8001 instead
 ```
 
-## 📝 Environment Variables
+## Environment Variables
 
 | Variable | Description | Default |
 |----------|-------------|---------|
@@ -230,12 +230,12 @@ ports:
 | `ALLOWED_ORIGINS` | CORS origins | * |
 | `SECRET_KEY` | Security key | (change in production) |
 
-## 🌐 Integration Examples
+## Integration Examples
 
 ### React/Next.js
 ```javascript
 const predictLoan = async (data) => {
-  const response = await fetch('http://localhost:8000/api/predict', {
+  const response = await fetch('https://credit-scoring-h7mv.onrender.com/docs#/Prediction/predict_loan_api_predict_post', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -250,21 +250,21 @@ const predictLoan = async (data) => {
 ```javascript
 async function predictLoan(data) {
   const response = await axios.post(
-    'http://localhost:8000/api/predict',
+    'https://credit-scoring-h7mv.onrender.com/docs#/Prediction/predict_loan_api_predict_post',
     data
   );
   return response.data;
 }
 ```
 
-## 📞 Support
+## Support
 
 For issues or questions:
 1. Check the logs: `docker-compose logs -f`
-2. Review API documentation: http://localhost:8000/docs
+2. Review API documentation: https://credit-scoring-h7mv.onrender.com/docs
 3. Ensure all dependencies are installed
 4. Verify model files are present
 
 ---
 
-**Ready to use!** Start the Docker container and begin making predictions. 🎉
+**Ready to use!** Start the Docker container and begin making predictions. 
