@@ -4,7 +4,7 @@
 
 **Endpoint:** `/api/apply`  
 **Method:** POST  
-**URL:** `http://localhost:8000/api/apply`
+**URL:** `https://credit-scoring-h7mv.onrender.com/docs#/`
 
 This is the **recommended endpoint** for customer-facing applications. It uses simple, customer-friendly fields and automatically calculates credit scores.
 
@@ -104,7 +104,7 @@ The system automatically calculates credit score (300-850) based on:
 
 ```javascript
 async function applyForLoan(customerData) {
-  const response = await fetch('http://localhost:8000/api/apply', {
+  const response = await fetch('https://credit-scoring-h7mv.onrender.com/api/apply', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -147,7 +147,7 @@ import requests
 
 def apply_for_loan(customer_data):
     response = requests.post(
-        'http://localhost:8000/api/apply',
+        'https://credit-scoring-h7mv.onrender.com/api/apply',
         json={
             'full_name': customer_data['full_name'],
             'age': customer_data['age'],
@@ -282,7 +282,7 @@ const LoanApplicationForm = () => {
 ## 🧪 Test with cURL
 
 ```bash
-curl -X POST "http://localhost:8000/api/apply" \
+curl -X POST "https://credit-scoring-h7mv.onrender.com/api/apply" \
   -H "Content-Type: application/json" \
   -d '{
     "full_name": "Nguyen Van A",
@@ -298,22 +298,6 @@ curl -X POST "http://localhost:8000/api/apply" \
     "currently_defaulting": false
   }'
 ```
-
----
-
-## 📊 Comparison: Old vs New Endpoint
-
-| Feature | Old `/api/loan-offer` | New `/api/apply` |
-|---------|----------------------|------------------|
-| **Fields** | 13 technical fields | 11 simple fields |
-| **Credit Score** | Customer must provide | Auto-calculated |
-| **Loan Grade** | Customer must provide | Auto-calculated |
-| **Interest Rate** | Customer must provide | Auto-calculated |
-| **Currency** | USD (converted to VND) | Direct VND |
-| **User-friendly** | ❌ No | ✅ Yes |
-| **Recommended** | For advanced use | **For customers** |
-
----
 
 ## 💼 Business Logic
 
