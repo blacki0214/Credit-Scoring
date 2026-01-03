@@ -16,7 +16,7 @@ class SmartLoanOfferService:
         self.tier_calculator = TierCalculator()
         self.feature_engineer = FeatureEngineer()
         self.approval_threshold = 0.30  # 30% default probability threshold
-        self.min_credit_score = 400  # Minimum credit score for approval
+        self.min_credit_score = 600  # Minimum credit score for approval
         
         # Risk-based interest rates (annual %)
         self.interest_rates = {
