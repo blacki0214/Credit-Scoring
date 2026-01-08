@@ -6,3 +6,4 @@ data/installments_payments.csv
 .venv
 *.parquet
 *.pkl
+credit-scoring-api/.env
