@@ -166,31 +166,15 @@ class RequestConverter:
             breakdown["defaults_adjustment"] = -80
         score += breakdown["defaults_adjustment"]
         
-        # Debt-to-income ratio (CRITICAL - Banks typically reject DTI > 43%)
-        if monthly_income > 0:
-            monthly_payment_estimate = loan_amount / 36
-            dti_ratio = monthly_payment_estimate / monthly_income
-            
-            # Extreme penalties for unrealistic loan amounts
-            if dti_ratio > 1.5:  # Loan payment > 150% of income (impossible!)
-                breakdown["debt_to_income_adjustment"] = -400
-            elif dti_ratio > 1.0:  # Loan payment > 100% of income
-                breakdown["debt_to_income_adjustment"] = -350
-            elif dti_ratio > 0.8:  # Loan payment > 80% of income
-                breakdown["debt_to_income_adjustment"] = -300
-            elif dti_ratio > 0.6:  # Loan payment > 60% of income
-                breakdown["debt_to_income_adjustment"] = -250
-            elif dti_ratio > 0.5:  # Loan payment > 50% of income (RED FLAG)
-                breakdown["debt_to_income_adjustment"] = -200
-            elif dti_ratio > 0.43:  # Standard bank limit
-                breakdown["debt_to_income_adjustment"] = -150
-            elif dti_ratio > 0.36:  # FHA limit
-                breakdown["debt_to_income_adjustment"] = -100
-            elif dti_ratio > 0.28:  # Recommended limit
-                breakdown["debt_to_income_adjustment"] = -50
-            elif dti_ratio > 0.20:
-                breakdown["debt_to_income_adjustment"] = -20
-        score += breakdown["debt_to_income_adjustment"]
+        # DTI ratio removed from credit score calculation (FIXED CIRCULAR LOGIC)
+        # DTI should be checked separately when calculating max loan amount,
+        # not as part of credit score calculation.
+        # Credit score should only reflect:
+        # - Payment history (defaults)
+        # - Credit history length
+        # - Income stability (employment)
+        # - Demographics (age, home ownership)
+        breakdown["debt_to_income_adjustment"] = 0
         
         # Final score
         breakdown["final_score"] = max(300, min(850, score))
