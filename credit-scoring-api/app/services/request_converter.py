@@ -82,7 +82,7 @@ class RequestConverter:
         """Calculate credit score with detailed breakdown for dashboard"""
         
         breakdown = {
-            "base_score": 650,
+            "base_score": 600,
             "age_adjustment": 0,
             "income_adjustment": 0,
             "employment_adjustment": 0,
@@ -94,7 +94,7 @@ class RequestConverter:
             "final_score": 0
         }
         
-        score = 650
+        score = 600
         
         # Age factor
         if age >= 35:
