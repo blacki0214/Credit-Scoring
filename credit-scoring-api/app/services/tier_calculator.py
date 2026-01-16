@@ -7,24 +7,58 @@ logger = logging.getLogger(__name__)
 class TierCalculator:
     """Calculate customer tier and loan limits based on profile."""
     
+    def calculate_credit_bonus(self, credit_score: int) -> Tuple[float, str]:
+        """
+        Calculate credit score bonus multiplier.
+        
+        Credit Score Ranges (based on actual risk):
+        - 600-649: +0.0x (baseline - minimum acceptable)
+        - 650-699: +0.5x (moderate risk)
+        - 700-739: +1.0x (good credit)
+        - 740-779: +1.5x (very good credit)
+        - 780+: +2.0x (excellent credit)
+        
+        Returns: (bonus_multiplier, reason)
+        """
+        if credit_score >= 780:
+            return 2.0, "excellent credit (780+)"
+        elif credit_score >= 740:
+            return 1.5, "very good credit (740-779)"
+        elif credit_score >= 700:
+            return 1.0, "good credit (700-739)"
+        elif credit_score >= 650:
+            return 0.5, "moderate credit (650-699)"
+        else:
+            return 0.0, "baseline credit (600-649)"
+    
     def calculate_tier(
         self,
         age: int,
         years_employed: float,
         employment_status: str,
         home_ownership: str,
-        loan_purpose: str
+        loan_purpose: str,
+        credit_score: int
     ) -> Tuple[str, float, str]:
         """
         Calculate customer tier and income multiplier.
         
+        Formula: (base_multiplier + credit_bonus) × purpose_multiplier
+        
         Returns: (tier_name, income_multiplier, tier_reason)
         
-        Tiers:
-        - PLATINUM: Strongest profile (4.5-6x annual income)
-        - GOLD: Strong profile (3.5-5x annual income)  
-        - SILVER: Good profile (2.5-4x annual income)
-        - BRONZE: New/unstable profile (1.5-2.5x annual income)
+        Base Tiers (from employment/age/home factors):
+        - PLATINUM: Strongest profile (base 6.5x)
+        - GOLD: Strong profile (base 5.0x)  
+        - SILVER: Good profile (base 3.5x)
+        - BRONZE: New/unstable profile (base 2.0x)
+        
+        Credit Score Bonus (added to base):
+        - 780+: +2.0x
+        - 740-779: +1.5x
+        - 700-739: +1.0x
+        - 650-699: +0.5x
+        - 600-649: +0.0x
         """
         score = 0
         reasons = []
@@ -131,24 +165,34 @@ class TierCalculator:
         # Determine tier based on total score (0-10 points)
         if score >= 9:
             tier = "PLATINUM"
-            base_multiplier = 4.5  # Up to 4.5x annual income
+            base_multiplier = 6.5  # Base 6.5x annual income
         elif score >= 6:
             tier = "GOLD"
-            base_multiplier = 3.5  # Up to 3.5x annual income
+            base_multiplier = 5.0  # Base 5.0x annual income
         elif score >= 3:
             tier = "SILVER"
-            base_multiplier = 2.5  # Up to 2.5x annual income
+            base_multiplier = 3.5  # Base 3.5x annual income
         else:
             tier = "BRONZE"
-            base_multiplier = 1.5  # Up to 1.5x annual income
-            
-        # Apply purpose multiplier to get final multiplier
-        final_multiplier = base_multiplier * purpose_mult
+            base_multiplier = 2.0  # Base 2.0x annual income
         
-        # Build reason string (show top 3-4 factors)
-        tier_reason = f"{tier} tier: " + ", ".join(reasons[:4])
+        # Calculate credit score bonus
+        credit_bonus, credit_reason = self.calculate_credit_bonus(credit_score)
+        reasons.append(credit_reason)
         
-        logger.info(f"Tier calculation - Score: {score}, Tier: {tier}, Multiplier: {final_multiplier:.2f}x")
+        # Combine base + credit bonus, then apply purpose multiplier
+        # Formula: (base + bonus) × purpose_multiplier
+        combined_multiplier = base_multiplier + credit_bonus
+        final_multiplier = combined_multiplier * purpose_mult
+        
+        # Build reason string (show top factors)
+        tier_reason = f"{tier} tier: " + ", ".join(reasons[:5])
+        
+        logger.info(
+            f"Tier calculation - Score: {score}, Tier: {tier}, "
+            f"Base: {base_multiplier:.1f}x, Credit bonus: +{credit_bonus:.1f}x, "
+            f"Final: {final_multiplier:.2f}x (credit score: {credit_score})"
+        )
         
         return tier, final_multiplier, tier_reason
     

@@ -49,13 +49,14 @@ class SmartLoanOfferService:
         5. Return personalized offer
         """
         
-        # Step 1: Calculate tier
+        # Step 1: Calculate tier (with credit score bonus)
         tier, income_multiplier, tier_reason = self.tier_calculator.calculate_tier(
             age=age,
             years_employed=years_employed,
             employment_status=employment_status,
             home_ownership=home_ownership,
-            loan_purpose=loan_purpose
+            loan_purpose=loan_purpose,
+            credit_score=credit_score
         )
         
         # Step 2: Check credit score - reject if too low

@@ -19,7 +19,7 @@ except ImportError:
     print("Note: Install colorama for colored output: pip install colorama")
 
 # API endpoint
-API_URL = "https://credit-scoring-h7mv.onrender.com/api/apply"
+API_URL = "http://localhost:8000/api/apply"
 
 # Color codes - Windows compatible
 class Colors:
