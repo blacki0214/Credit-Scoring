@@ -150,28 +150,28 @@ curl -X POST "https://credit-scoring-h7mv.onrender.com/docs#/Prediction/predict_
 
 ```
 credit-scoring-api/
-├── app/
-│   ├── api/
-│   │   └── routes/          # API endpoints
-│   ├── core/                # Configuration & logging
-│   ├── models/              # Pydantic schemas
-│   ├── services/            # Business logic
-│   └── main.py             # FastAPI application
-├── models/                  # ML model files
-│   ├── lgb_model_optimized.pkl
-│   └── ensemble_comparison_metadata.pkl
-├── tests/                   # Test suite
-├── .env                     # Environment variables
-├── .env.example            # Environment template
-├── .dockerignore           # Docker ignore rules
-├── Dockerfile              # Docker image definition
-├── docker-compose.yml      # Docker compose config
-├── requirements.txt        # Python dependencies
-├── start.bat              # Windows startup script
-├── start.sh               # Linux/Mac startup script
-├── test_api.py            # API test script
-├── DOCKER_GUIDE.md        # Comprehensive guide
-└── README.md              # Project documentation
+ app/
+    api/
+       routes/          # API endpoints
+    core/                # Configuration & logging
+    models/              # Pydantic schemas
+    services/            # Business logic
+    main.py             # FastAPI application
+ models/                  # ML model files
+    lgb_model_optimized.pkl
+    ensemble_comparison_metadata.pkl
+ tests/                   # Test suite
+ .env                     # Environment variables
+ .env.example            # Environment template
+ .dockerignore           # Docker ignore rules
+ Dockerfile              # Docker image definition
+ docker-compose.yml      # Docker compose config
+ requirements.txt        # Python dependencies
+ start.bat              # Windows startup script
+ start.sh               # Linux/Mac startup script
+ test_api.py            # API test script
+ DOCKER_GUIDE.md        # Comprehensive guide
+ README.md              # Project documentation
 ```
 
 ---
@@ -277,4 +277,4 @@ Your Credit Scoring API is now:
 
 ---
 
-**🎊 Everything is ready! Happy coding!**
+** Everything is ready! Happy coding!**

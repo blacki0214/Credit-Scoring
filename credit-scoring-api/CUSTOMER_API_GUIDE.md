@@ -10,7 +10,7 @@ This is the **recommended endpoint** for customer-facing applications. It uses s
 
 ---
 
-## ✨ Why Use This Endpoint?
+##  Why Use This Endpoint?
 
 **Customer-friendly** - No technical jargon  
 **Auto-calculated credit score** - Customers don't need to know their score  
@@ -98,7 +98,7 @@ The system automatically calculates credit score (300-850) based on:
 
 ---
 
-## 💡 Integration Examples
+##  Integration Examples
 
 ### React/Next.js
 
@@ -279,7 +279,7 @@ const LoanApplicationForm = () => {
 
 ---
 
-## 🧪 Test with cURL
+##  Test with cURL
 
 ```bash
 curl -X POST "http://localhost:8000/api/apply" \
@@ -301,7 +301,7 @@ curl -X POST "http://localhost:8000/api/apply" \
 
 ---
 
-## 📊 Comparison: Old vs New Endpoint
+##  Comparison: Old vs New Endpoint
 
 | Feature | Old `/api/loan-offer` | New `/api/apply` |
 |---------|----------------------|------------------|
@@ -310,7 +310,7 @@ curl -X POST "http://localhost:8000/api/apply" \
 | **Loan Grade** | Customer must provide | Auto-calculated |
 | **Interest Rate** | Customer must provide | Auto-calculated |
 | **Currency** | USD (converted to VND) | Direct VND |
-| **User-friendly** | ❌ No | ✅ Yes |
+| **User-friendly** |  No |  Yes |
 | **Recommended** | For advanced use | **For customers** |
 
 ---

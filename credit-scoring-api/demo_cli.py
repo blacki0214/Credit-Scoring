@@ -60,10 +60,10 @@ def print_header():
 def print_tier_emoji(tier: str) -> str:
     """Get emoji for tier"""
     emojis = {
-        "BRONZE": "🥉",
-        "SILVER": "🥈",
-        "GOLD": "🥇",
-        "PLATINUM": "🌟"
+        "BRONZE": "",
+        "SILVER": "",
+        "GOLD": "",
+        "PLATINUM": ""
     }
     return emojis.get(tier, "")
 
@@ -156,7 +156,7 @@ def display_result(result: Dict[str, Any], customer_data: Dict[str, Any]):
         
         # Loan details
         loan_amount = result.get('loan_amount_vnd', 0)
-        print(f"💵 Maximum Loan Amount:")
+        print(f" Maximum Loan Amount:")
         print(f"   {format_currency(loan_amount)}")
         print(f"   ({loan_amount:,.0f} VND)\n")
         
@@ -179,7 +179,7 @@ def display_result(result: Dict[str, Any], customer_data: Dict[str, Any]):
         print(f"Risk Level: {risk_level}\n")
         
         # Summary
-        print(f"💬 Message:")
+        print(f" Message:")
         print(f"   {result.get('approval_message', 'N/A')}")
         
     else:
@@ -299,7 +299,7 @@ def run_custom_demo():
     print_header()
     customer_data = get_customer_input()
     
-    print("\n🔄 Processing...")
+    print("\n Processing...")
     
     try:
         response = requests.post(API_URL, json=customer_data, timeout=10)
@@ -316,7 +316,7 @@ def run_custom_demo():
 def show_comparison():
     """Show same customer, different purposes"""
     print_header()
-    print("📊 COMPARISON DEMO - Same Customer, Different Purposes\n")
+    print(" COMPARISON DEMO - Same Customer, Different Purposes\n")
     
     base_customer = {
         "full_name": "Demo Customer - Premium Profile",
@@ -355,8 +355,8 @@ def show_comparison():
             
             print(f"\n{purpose}")
             print(f"  {tier_emoji} Tier: {tier}")
-            print(f"  💵 Max Loan: {format_currency(loan_amount)}")
-            print(f"  ⏱️  Term: {term} months ({term//12} years)")
+            print(f"   Max Loan: {format_currency(loan_amount)}")
+            print(f"  ⏱  Term: {term} months ({term//12} years)")
             
         except Exception as e:
             print(f"Error: {e}")
@@ -385,24 +385,24 @@ def main():
         elif choice == "3":
             show_comparison()
         elif choice == "4":
-            print(f"\nThank you for using the demo! 👋\n")
+            print(f"\nThank you for using the demo! \n")
             break
         else:
             print("Invalid choice. Please try again.")
             input("Press Enter to continue...")
 
 if __name__ == "__main__":
-    print(f"\n⚠️ Make sure the API is running first!")
+    print(f"\n Make sure the API is running first!")
     print(f"Run: docker-compose up -d\n")
     
     try:
         # Test connection
         response = requests.get("http://localhost:8000/api/health", timeout=5)
-        print(f"✅ API is running!\n")
+        print(f" API is running!\n")
         input("Press Enter to start demo...")
         main()
     except:
-        print(f"❌ Cannot connect to API at {API_URL}")
+        print(f" Cannot connect to API at {API_URL}")
         print(f"\nPlease start the API first:")
         print("  cd credit-scoring-api")
         print("  docker-compose up -d\n")

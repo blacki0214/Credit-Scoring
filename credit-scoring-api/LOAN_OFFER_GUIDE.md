@@ -1,6 +1,6 @@
 # Loan Offer API - Integration Guide
 
-## 💰 Loan Offer Endpoint (VND Currency)
+##  Loan Offer Endpoint (VND Currency)
 
 Your app can now get loan approval decisions with amounts in Vietnamese Dong (VND).
 
@@ -267,7 +267,7 @@ curl -X POST "https://credit-scoring-h7mv.onrender.com/docs#/Prediction/get_loan
 
 ---
 
-## 🎉 Ready to Integrate!
+##  Ready to Integrate!
 
 Your app can now:
 1. Collect customer information

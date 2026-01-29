@@ -35,9 +35,94 @@ Click "Try it out" on any endpoint and click "Execute"
 
 ---
 
-## API Endpoints (4 Total)
+## API Endpoints (6 Total)
 
-### 1. `/api/apply` - Customer Loan Application
+### NEW: 2-Step Loan Application Flow
+
+#### Step 1: `/api/calculate-limit` - Get Credit Score & Loan Limit
+
+**FIRST STEP: Calculate how much customer can borrow**
+
+After customer fills in personal information, call this endpoint to get:
+- Credit score (300-850)
+- Maximum loan limit
+- Risk assessment
+- Approval status
+
+**Request:**
+```json
+POST /api/calculate-limit
+{
+  "full_name": "Nguyen Van A",
+  "age": 30,
+  "monthly_income": 20000000,
+  "employment_status": "EMPLOYED",
+  "years_employed": 5.0,
+  "home_ownership": "RENT",
+  "loan_purpose": "CAR",
+  "years_credit_history": 3,
+  "has_previous_defaults": false,
+  "currently_defaulting": false
+}
+```
+
+**Response:**
+```json
+{
+  "credit_score": 750,
+  "loan_limit_vnd": 420000000,
+  "risk_level": "Low",
+  "approved": true,
+  "message": "Credit score: 750. Maximum loan limit: 420,000,000 VND..."
+}
+```
+
+---
+
+#### Step 2: `/api/calculate-terms` - Get Loan Terms by Purpose
+
+**SECOND STEP: Calculate interest rate, term, and monthly payment**
+
+After customer selects loan purpose and amount, call this endpoint to get:
+- Interest rate (based on purpose + credit score)
+- Loan term (based on purpose)
+- Monthly payment
+- Total payment & interest
+
+**Request:**
+```json
+POST /api/calculate-terms
+{
+  "loan_amount": 300000000,
+  "loan_purpose": "CAR",
+  "credit_score": 750
+}
+```
+
+**Response:**
+```json
+{
+  "loan_amount_vnd": 300000000,
+  "loan_purpose": "CAR",
+  "interest_rate": 6.5,
+  "loan_term_months": 60,
+  "monthly_payment_vnd": 5865000,
+  "total_payment_vnd": 351900000,
+  "total_interest_vnd": 51900000,
+  "rate_explanation": "Car loan: base 7.5% + -1.0% (very good credit) = 6.5%",
+  "term_explanation": "60 months (5 years) - Car loan"
+}
+```
+
+**Why use 2-step flow?**
+- User sees loan limit BEFORE selecting purpose
+- More transparent and user-friendly
+- Interest rate varies by purpose
+- Better UX for mobile apps
+
+---
+
+### 1. `/api/apply` - One-Step Loan Application (Legacy)
 
 **USE THIS FOR YOUR APP**
 
@@ -71,9 +156,11 @@ POST https://credit-scoring-h7mv.onrender.com/docs#/Prediction/apply_for_loan_ap
   "interest_rate": 8.5,
   "loan_term_months": 36,
   "risk_level": "Low",
-  "approval_message": "Loan approved! Low risk applicant."
+  "approval_message": "Loan approved! Maximum loan: 100,000,000 VND. Low risk at 8.5% APR."
 }
 ```
+
+**Note:** This endpoint no longer returns `loan_tier` or `tier_reason` fields.
 
 **Why use this?**
 - No complex calculations needed
@@ -121,9 +208,9 @@ Get detailed credit score breakdown without applying for a loan.
 
 ---
 
-### ❤️ 3. `/api/health` - Health Check
+###  3. `/api/health` - Health Check
 
-**👉 CHECK IF API IS RUNNING**
+** CHECK IF API IS RUNNING**
 
 ```json
 GET https://credit-scoring-h7mv.onrender.com/docs#/Health/health_check_api_health_get
@@ -138,9 +225,9 @@ Response:
 
 ---
 
-### ℹ️ 4. `/api/model/info` - Model Information
+### ℹ 4. `/api/model/info` - Model Information
 
-**👉 GET AI MODEL DETAILS**
+** GET AI MODEL DETAILS**
 
 ```json
 GET https://credit-scoring-h7mv.onrender.com/docs#/Model%20Info/get_model_features_api_model_features_get
@@ -303,38 +390,38 @@ curl -X POST "https://credit-scoring-h7mv.onrender.com/docs#/Prediction/apply_fo
 
 ```
 credit-scoring-api/
-├── app/
-│   ├── main.py                    # FastAPI app entry
-│   ├── api/
-│   │   ├── routes/
-│   │   │   ├── prediction.py      # /api/apply, /api/credit-score
-│   │   │   ├── health.py          # /api/health
-│   │   │   └── model_info.py      # /api/model/info
-│   │   └── dependencies.py
-│   ├── services/
-│   │   ├── prediction_service.py  # AI predictions
-│   │   ├── loan_offer_service.py  # Loan calculations
-│   │   ├── request_converter.py   # Credit score calculator
-│   │   ├── feature_engineering.py # 13 → 64 features
-│   │   └── model_loader.py        # Load AI models
-│   ├── models/
-│   │   ├── schemas.py             # Request/response models
-│   │   └── responses.py
-│   └── core/
-│       ├── config.py              # Settings
-│       └── logging.py             # Logging
-├── models/
-│   ├── lgb_model_optimized.pkl    # The AI brain
-│   └── ensemble_comparison_metadata.pkl
-├── tests/
-│   ├── test_api.py                # API tests (10/10 passing)
-│   ├── test_models.py
-│   └── test_prediction.py
-├── docker-compose.yml             # One command to run
-├── Dockerfile                     # Container config
-├── requirements.txt               # Python packages
-├── .env                           # Environment variables
-└── README.md                      # This file
+ app/
+    main.py                    # FastAPI app entry
+    api/
+       routes/
+          prediction.py      # /api/apply, /api/credit-score
+          health.py          # /api/health
+          model_info.py      # /api/model/info
+       dependencies.py
+    services/
+       prediction_service.py  # AI predictions
+       loan_offer_service.py  # Loan calculations
+       request_converter.py   # Credit score calculator
+       feature_engineering.py # 13 → 64 features
+       model_loader.py        # Load AI models
+    models/
+       schemas.py             # Request/response models
+       responses.py
+    core/
+        config.py              # Settings
+        logging.py             # Logging
+ models/
+    lgb_model_optimized.pkl    # The AI brain
+    ensemble_comparison_metadata.pkl
+ tests/
+    test_api.py                # API tests (10/10 passing)
+    test_models.py
+    test_prediction.py
+ docker-compose.yml             # One command to run
+ Dockerfile                     # Container config
+ requirements.txt               # Python packages
+ .env                           # Environment variables
+ README.md                      # This file
 ```
 
 ---
@@ -446,7 +533,7 @@ Base Score: 650
 + Employment status: -30 to +20 points
 - Defaults: -150 to 0 points
 - High debt-to-income: -50 to 0 points
-─────────────────────────
+
 Final Score: 300-850
 ```
 
