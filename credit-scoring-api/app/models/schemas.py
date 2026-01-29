@@ -144,7 +144,7 @@ class PredictionRequest(BaseModel):
 
 
 class LoanOfferResponse(BaseModel):
-    """Simplified loan offer response in VND"""
+    """Simplified loan offer response in VND (NO TIER SYSTEM)"""
     
     approved: bool = Field(..., description="Whether the loan is approved")
     loan_amount_vnd: float = Field(..., description="Maximum recommended loan amount in VND (calculated by system)")
@@ -155,8 +155,6 @@ class LoanOfferResponse(BaseModel):
     credit_score: int = Field(..., description="Customer's credit score (300-850)")
     risk_level: str = Field(..., description="Risk level (Low, Medium, High, Very High)")
     approval_message: str = Field(..., description="Approval or rejection message")
-    loan_tier: str = Field(..., description="Loan tier (PLATINUM, GOLD, SILVER, BRONZE, NONE)")
-    tier_reason: str = Field(..., description="Why this tier was assigned")
     
     class Config:
         json_schema_extra = {
@@ -169,9 +167,74 @@ class LoanOfferResponse(BaseModel):
                 "loan_term_months": 36,
                 "credit_score": 750,
                 "risk_level": "Low",
-                "approval_message": "Loan approved. GOLD tier. Maximum recommended: 420,000,000 VND. Low risk at 8.5% APR.",
-                "loan_tier": "GOLD",
-                "tier_reason": "GOLD tier: prime earning age (30-50), 5+ years employment, mortgage holder - proven creditworthiness"
+                "approval_message": "Loan approved! Maximum loan: 420,000,000 VND. Low risk at 8.5% APR. Credit score: 750."
+            }
+        }
+
+
+class LoanLimitResponse(BaseModel):
+    """Response for /api/calculate-limit endpoint (Step 1)"""
+    
+    credit_score: int = Field(..., description="Calculated credit score (300-850)")
+    loan_limit_vnd: float = Field(..., description="Maximum loan amount in VND")
+    risk_level: str = Field(..., description="Risk level (Low, Medium, High, Very High)")
+    approved: bool = Field(..., description="Whether customer qualifies for a loan")
+    message: str = Field(..., description="Explanation of loan limit calculation")
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "credit_score": 750,
+                "loan_limit_vnd": 420000000,
+                "risk_level": "Low",
+                "approved": True,
+                "message": "Credit score: 750. Maximum loan limit: 420,000,000 VND based on income and risk assessment."
+            }
+        }
+
+
+class LoanTermsRequest(BaseModel):
+    """Request for /api/calculate-terms endpoint (Step 2)"""
+    
+    loan_amount: float = Field(..., description="Desired loan amount in VND", ge=0)
+    loan_purpose: str = Field(..., description="Purpose of loan (HOME, CAR, BUSINESS, EDUCATION, etc.)")
+    credit_score: int = Field(..., description="Credit score from Step 1", ge=300, le=850)
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "loan_amount": 300000000,
+                "loan_purpose": "CAR",
+                "credit_score": 750
+            }
+        }
+
+
+class LoanTermsResponse(BaseModel):
+    """Response for /api/calculate-terms endpoint (Step 2)"""
+    
+    loan_amount_vnd: float = Field(..., description="Loan amount in VND")
+    loan_purpose: str = Field(..., description="Purpose of loan")
+    interest_rate: float = Field(..., description="Annual interest rate (%)")
+    loan_term_months: int = Field(..., description="Loan term in months")
+    monthly_payment_vnd: float = Field(..., description="Monthly payment in VND")
+    total_payment_vnd: float = Field(..., description="Total payment over loan term")
+    total_interest_vnd: float = Field(..., description="Total interest paid")
+    rate_explanation: str = Field(..., description="How interest rate was calculated")
+    term_explanation: str = Field(..., description="Why this loan term")
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "loan_amount_vnd": 300000000,
+                "loan_purpose": "CAR",
+                "interest_rate": 6.5,
+                "loan_term_months": 60,
+                "monthly_payment_vnd": 5865000,
+                "total_payment_vnd": 351900000,
+                "total_interest_vnd": 51900000,
+                "rate_explanation": "Car loan - secured by vehicle: base 7.5% + -1.0% (very good credit) = 6.5%",
+                "term_explanation": "60 months (5 years) - Car loan - secured by vehicle"
             }
         }
 

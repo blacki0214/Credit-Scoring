@@ -7,3 +7,4 @@ data/installments_payments.csv
 *.parquet
 *.pkl
 credit-scoring-api/.env
+.agent

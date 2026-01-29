@@ -53,7 +53,7 @@ def print_header():
     clear_screen()
     print(f"{Colors.HEADER}{Colors.BOLD}")
     print("=" * 70)
-    print("    🏦 SMART LOAN RECOMMENDATION SYSTEM - TIER-BASED DEMO")
+    print("    SMART LOAN RECOMMENDATION SYSTEM - TIER-BASED DEMO")
     print("=" * 70)
     print(f"{Colors.ENDC}\n")
 
@@ -78,22 +78,22 @@ def format_currency(amount: float) -> str:
 
 def get_customer_input() -> Dict[str, Any]:
     """Get customer information from user"""
-    print(f"{Colors.OKCYAN}📝 Enter Customer Information:{Colors.ENDC}\n")
+    print("Enter Customer Information:\n")
     
-    full_name = input("👤 Full Name: ").strip() or "Demo Customer"
-    age = int(input("🎂 Age (18-100): ").strip() or "30")
-    monthly_income = float(input("💰 Monthly Income (VND, e.g., 20000000): ").strip() or "20000000")
+    full_name = input("Full Name: ").strip() or "Demo Customer"
+    age = int(input("Age (18-100): ").strip() or "30")
+    monthly_income = float(input("Monthly Income (VND, e.g., 20000000): ").strip() or "20000000")
     
-    print("\n📊 Employment Status:")
+    print("\nEmployment Status:")
     print("  1. EMPLOYED")
     print("  2. SELF_EMPLOYED")
     print("  3. UNEMPLOYED")
     emp_choice = input("Select (1-3): ").strip() or "1"
     employment_status = ["EMPLOYED", "SELF_EMPLOYED", "UNEMPLOYED"][int(emp_choice) - 1]
     
-    years_employed = float(input("💼 Years Employed: ").strip() or "5.0")
+    years_employed = float(input("Years Employed: ").strip() or "5.0")
     
-    print("\n🏠 Home Ownership:")
+    print("\nHome Ownership:")
     print("  1. RENT")
     print("  2. OWN")
     print("  3. MORTGAGE")
@@ -101,7 +101,7 @@ def get_customer_input() -> Dict[str, Any]:
     home_choice = input("Select (1-4): ").strip() or "3"
     home_ownership = ["RENT", "OWN", "MORTGAGE", "LIVING_WITH_PARENTS"][int(home_choice) - 1]
     
-    print("\n🎯 Loan Purpose:")
+    print("\nLoan Purpose:")
     print("  1. HOME (Highest amount!)")
     print("  2. CAR")
     print("  3. BUSINESS")
@@ -115,10 +115,10 @@ def get_customer_input() -> Dict[str, Any]:
                 "HOME_IMPROVEMENT", "MEDICAL", "PERSONAL"]
     loan_purpose = purposes[int(purpose_choice) - 1]
     
-    years_credit = int(input("\n📜 Years of Credit History: ").strip() or "5")
+    years_credit = int(input("Years of Credit History: ").strip() or "5")
     
-    has_defaults = input("❌ Ever defaulted on a loan? (y/n): ").strip().lower() == 'y'
-    currently_defaulting = input("⚠️  Currently in default? (y/n): ").strip().lower() == 'y'
+    has_defaults = input("Ever defaulted on a loan? (y/n): ").strip().lower() == 'y'
+    currently_defaulting = input("Currently in default? (y/n): ").strip().lower() == 'y'
     
     return {
         "full_name": full_name,
@@ -136,62 +136,62 @@ def get_customer_input() -> Dict[str, Any]:
 def display_result(result: Dict[str, Any], customer_data: Dict[str, Any]):
     """Display loan recommendation result"""
     print("\n" + "=" * 70)
-    print(f"{Colors.BOLD}📊 LOAN RECOMMENDATION RESULT{Colors.ENDC}")
+    print("LOAN RECOMMENDATION RESULT")
     print("=" * 70 + "\n")
     
     # Customer info
-    print(f"{Colors.OKCYAN}👤 Customer:{Colors.ENDC} {customer_data['full_name']}")
-    print(f"{Colors.OKCYAN}💰 Monthly Income:{Colors.ENDC} {format_currency(customer_data['monthly_income'])}")
-    print(f"{Colors.OKCYAN}🎯 Loan Purpose:{Colors.ENDC} {customer_data['loan_purpose']}\n")
+    print(f"Customer: {customer_data['full_name']}")
+    print(f"Monthly Income: {format_currency(customer_data['monthly_income'])}")
+    print(f"Loan Purpose: {customer_data['loan_purpose']}\n")
     
     # Tier
     tier = result.get('loan_tier', 'N/A')
     tier_emoji = print_tier_emoji(tier)
-    print(f"{Colors.BOLD}{tier_emoji} TIER: {tier}{Colors.ENDC}")
+    print(f"{tier_emoji} TIER: {tier}")
     print(f"   {result.get('tier_reason', 'N/A')}\n")
     
     # Approval status
     if result.get('approved'):
-        print(f"{Colors.OKGREEN}{Colors.BOLD}✅ LOAN APPROVED!{Colors.ENDC}\n")
+        print(f"LOAN APPROVED!")
         
         # Loan details
         loan_amount = result.get('loan_amount_vnd', 0)
-        print(f"{Colors.BOLD}💵 Maximum Loan Amount:{Colors.ENDC}")
-        print(f"   {Colors.OKGREEN}{format_currency(loan_amount)}{Colors.ENDC}")
+        print(f"💵 Maximum Loan Amount:")
+        print(f"   {format_currency(loan_amount)}")
         print(f"   ({loan_amount:,.0f} VND)\n")
         
         monthly_payment = result.get('monthly_payment_vnd', 0)
-        print(f"{Colors.BOLD}📅 Monthly Payment:{Colors.ENDC}")
+        print(f"Monthly Payment:")
         print(f"   {format_currency(monthly_payment)}")
         print(f"   ({monthly_payment:,.0f} VND/month)\n")
         
         loan_term = result.get('loan_term_months', 0)
-        print(f"{Colors.BOLD}⏱️  Loan Term:{Colors.ENDC} {loan_term} months ({loan_term//12} years)")
+        print(f"Loan Term: {loan_term} months ({loan_term//12} years)")
         
         interest_rate = result.get('interest_rate', 0)
-        print(f"{Colors.BOLD}📈 Interest Rate:{Colors.ENDC} {interest_rate}% per year\n")
+        print(f"Interest Rate: {interest_rate}% per year\n")
         
         credit_score = result.get('credit_score', 0)
-        print(f"{Colors.BOLD}⭐ Credit Score:{Colors.ENDC} {credit_score}/850")
+        print(f"Credit Score: {credit_score}/850")
         
         risk_level = result.get('risk_level', 'N/A')
         risk_color = Colors.OKGREEN if risk_level == "Low" else Colors.WARNING
-        print(f"{Colors.BOLD}🎯 Risk Level:{Colors.ENDC} {risk_color}{risk_level}{Colors.ENDC}\n")
+        print(f"Risk Level: {risk_level}\n")
         
         # Summary
-        print(f"{Colors.OKCYAN}💬 Message:{Colors.ENDC}")
+        print(f"💬 Message:")
         print(f"   {result.get('approval_message', 'N/A')}")
         
     else:
-        print(f"{Colors.FAIL}{Colors.BOLD}❌ LOAN REJECTED{Colors.ENDC}\n")
+        print(f"LOAN REJECTED")
         
         credit_score = result.get('credit_score', 0)
-        print(f"{Colors.BOLD}⭐ Credit Score:{Colors.ENDC} {credit_score}/850")
+        print(f"Credit Score: {credit_score}/850")
         
         risk_level = result.get('risk_level', 'N/A')
-        print(f"{Colors.BOLD}🎯 Risk Level:{Colors.ENDC} {Colors.FAIL}{risk_level}{Colors.ENDC}\n")
+        print(f"Risk Level: {risk_level}")
         
-        print(f"{Colors.WARNING}💬 Reason:{Colors.ENDC}")
+        print(f"Reason:")
         print(f"   {result.get('approval_message', 'N/A')}")
     
     print("\n" + "=" * 70 + "\n")
@@ -200,7 +200,7 @@ def run_quick_demo():
     """Run quick demo with pre-defined scenarios"""
     scenarios = [
         {
-            "name": "❌ REJECTED - Poor Credit Profile",
+            "name": "REJECTED - Poor Credit Profile",
             "data": {
                 "full_name": "Nguyen Van X",
                 "age": 20,
@@ -215,7 +215,7 @@ def run_quick_demo():
             }
         },
         {
-            "name": "🥉 BRONZE - Young Personal Borrower",
+            "name": "BRONZE - Young Personal Borrower",
             "data": {
                 "full_name": "Nguyen Van A",
                 "age": 22,
@@ -230,7 +230,7 @@ def run_quick_demo():
             }
         },
         {
-            "name": "🥈 SILVER - Mid-Career Education",
+            "name": "SILVER - Mid-Career Education",
             "data": {
                 "full_name": "Tran Thi B",
                 "age": 28,
@@ -245,7 +245,7 @@ def run_quick_demo():
             }
         },
         {
-            "name": "🥇 GOLD - Prime Car Buyer",
+            "name": "GOLD - Prime Car Buyer",
             "data": {
                 "full_name": "Le Van C",
                 "age": 35,
@@ -260,7 +260,7 @@ def run_quick_demo():
             }
         },
         {
-            "name": "🌟 PLATINUM - Premium Home Buyer",
+            "name": "PLATINUM - Premium Home Buyer",
             "data": {
                 "full_name": "Pham Thi D",
                 "age": 40,
@@ -287,19 +287,19 @@ def run_quick_demo():
             display_result(result, scenario['data'])
             
         except requests.exceptions.RequestException as e:
-            print(f"{Colors.FAIL}❌ Error connecting to API: {e}{Colors.ENDC}")
-            print(f"\n{Colors.WARNING}Make sure the API is running at {API_URL}{Colors.ENDC}")
+            print(f"Error connecting to API: {e}")
+            print(f"\nMake sure the API is running at {API_URL}")
             return
         
         if i < len(scenarios):
-            input(f"\n{Colors.OKCYAN}Press Enter for next demo...{Colors.ENDC}")
+            input(f"\nPress Enter for next demo...")
 
 def run_custom_demo():
     """Run custom demo with user input"""
     print_header()
     customer_data = get_customer_input()
     
-    print(f"\n{Colors.OKCYAN}🔄 Processing...{Colors.ENDC}\n")
+    print("\n🔄 Processing...")
     
     try:
         response = requests.post(API_URL, json=customer_data, timeout=10)
@@ -310,13 +310,13 @@ def run_custom_demo():
         display_result(result, customer_data)
         
     except requests.exceptions.RequestException as e:
-        print(f"{Colors.FAIL}❌ Error connecting to API: {e}{Colors.ENDC}")
-        print(f"\n{Colors.WARNING}Make sure the API is running at {API_URL}{Colors.ENDC}")
+        print(f"Error connecting to API: {e}")
+        print(f"\nMake sure the API is running at {API_URL}")
 
 def show_comparison():
     """Show same customer, different purposes"""
     print_header()
-    print(f"{Colors.BOLD}📊 COMPARISON DEMO - Same Customer, Different Purposes{Colors.ENDC}\n")
+    print("📊 COMPARISON DEMO - Same Customer, Different Purposes\n")
     
     base_customer = {
         "full_name": "Demo Customer - Premium Profile",
@@ -332,7 +332,7 @@ def show_comparison():
     
     purposes = ["PERSONAL", "EDUCATION", "CAR", "HOME"]
     
-    print(f"{Colors.OKCYAN}Customer Profile:{Colors.ENDC}")
+    print("Customer Profile:")
     print(f"  Age: {base_customer['age']}")
     print(f"  Monthly Income: {format_currency(base_customer['monthly_income'])}")
     print(f"  Employment: {base_customer['years_employed']} years")
@@ -353,56 +353,56 @@ def show_comparison():
             loan_amount = result.get('loan_amount_vnd', 0)
             term = result.get('loan_term_months', 0)
             
-            print(f"\n{Colors.BOLD}{purpose}:{Colors.ENDC}")
+            print(f"\n{purpose}")
             print(f"  {tier_emoji} Tier: {tier}")
-            print(f"  💵 Max Loan: {Colors.OKGREEN}{format_currency(loan_amount)}{Colors.ENDC}")
+            print(f"  💵 Max Loan: {format_currency(loan_amount)}")
             print(f"  ⏱️  Term: {term} months ({term//12} years)")
             
         except Exception as e:
-            print(f"{Colors.FAIL}Error: {e}{Colors.ENDC}")
+            print(f"Error: {e}")
     
     print("\n" + "=" * 70 + "\n")
-    input(f"{Colors.OKCYAN}Press Enter to continue...{Colors.ENDC}")
+    input(f"Press Enter to continue...")
 
 def main():
     """Main menu"""
     while True:
         print_header()
-        print(f"{Colors.BOLD}Select Demo Mode:{Colors.ENDC}\n")
-        print("  1. 🎬 Quick Demo (4 pre-defined scenarios)")
-        print("  2. ✍️  Custom Input (enter your own data)")
-        print("  3. 📊 Comparison Demo (same customer, different purposes)")
-        print("  4. ❌ Exit\n")
+        print("Select Demo Mode:\n")
+        print("  1. Quick Demo (4 pre-defined scenarios)")
+        print("  2. Custom Input (enter your own data)")
+        print("  3. Comparison Demo (same customer, different purposes)")
+        print("  4. Exit\n")
         
-        choice = input(f"{Colors.OKCYAN}Your choice (1-4): {Colors.ENDC}").strip()
+        choice = input("Your choice (1-4): ").strip()
         
         if choice == "1":
             run_quick_demo()
-            input(f"\n{Colors.OKCYAN}Press Enter to return to menu...{Colors.ENDC}")
+            input(f"\nPress Enter to return to menu...")
         elif choice == "2":
             run_custom_demo()
-            input(f"\n{Colors.OKCYAN}Press Enter to return to menu...{Colors.ENDC}")
+            input(f"\nPress Enter to return to menu...")
         elif choice == "3":
             show_comparison()
         elif choice == "4":
-            print(f"\n{Colors.OKGREEN}Thank you for using the demo! 👋{Colors.ENDC}\n")
+            print(f"\nThank you for using the demo! 👋\n")
             break
         else:
-            print(f"{Colors.FAIL}Invalid choice. Please try again.{Colors.ENDC}")
+            print("Invalid choice. Please try again.")
             input("Press Enter to continue...")
 
 if __name__ == "__main__":
-    print(f"\n{Colors.WARNING}⚠️  Make sure the API is running first!{Colors.ENDC}")
-    print(f"{Colors.OKCYAN}Run: docker-compose up -d{Colors.ENDC}\n")
+    print(f"\n⚠️ Make sure the API is running first!")
+    print(f"Run: docker-compose up -d\n")
     
     try:
         # Test connection
         response = requests.get("http://localhost:8000/api/health", timeout=5)
-        print(f"{Colors.OKGREEN}✅ API is running!{Colors.ENDC}\n")
+        print(f"✅ API is running!\n")
         input("Press Enter to start demo...")
         main()
     except:
-        print(f"{Colors.FAIL}❌ Cannot connect to API at {API_URL}{Colors.ENDC}")
-        print(f"\n{Colors.WARNING}Please start the API first:{Colors.ENDC}")
-        print(f"{Colors.OKCYAN}  cd credit-scoring-api{Colors.ENDC}")
-        print(f"{Colors.OKCYAN}  docker-compose up -d{Colors.ENDC}\n")
+        print(f"❌ Cannot connect to API at {API_URL}")
+        print(f"\nPlease start the API first:")
+        print("  cd credit-scoring-api")
+        print("  docker-compose up -d\n")

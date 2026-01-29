@@ -7,7 +7,7 @@ router = APIRouter()
 @router.get("/model/info")
 async def get_model_info():
     """
-    ℹ️ Get Model Information
+    Get Model Information
     
     Returns model metadata and performance metrics
     """
@@ -49,7 +49,7 @@ async def get_model_info():
 @router.get("/model/features")
 async def get_model_features():
     """
-    📋 Get Model Features
+    Get Model Features
     
     Returns list of all features used by the model
     """
