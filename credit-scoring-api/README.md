@@ -17,7 +17,7 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload --port 8000
 ```
 
-**Open:** http://localhost:8000/docs
+**Open:** https://credit-scoring-h7mv.onrender.com/docs
 
 ---
 
