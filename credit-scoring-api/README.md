@@ -426,7 +426,7 @@ MIT License - Free to use for commercial and personal projects
 
 ## Support
 
-- **API Docs:** http://localhost:8000/docs
+- **API Docs:** https://credit-scoring-h7mv.onrender.com/docs
 - **Issues:** Create GitHub issue
 - **Questions:** Check API docs first
 
