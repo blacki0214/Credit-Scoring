@@ -17,7 +17,7 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload --port 8000
 ```
 
-**Open:** http://localhost:8000/docs
+**Open:** https://credit-scoring-h7mv.onrender.com/docs
 
 ---
 
@@ -426,7 +426,7 @@ MIT License - Free to use for commercial and personal projects
 
 ## Support
 
-- **API Docs:** http://localhost:8000/docs
+- **API Docs:** https://credit-scoring-h7mv.onrender.com/docs
 - **Issues:** Create GitHub issue
 - **Questions:** Check API docs first
 
