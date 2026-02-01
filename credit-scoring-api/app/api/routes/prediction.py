@@ -1,3 +1,4 @@
+
 from fastapi import APIRouter, HTTPException, status
 from app.models.schemas import (
     PredictionRequest, PredictionResponse, LoanOfferResponse, 
@@ -14,7 +15,7 @@ from app.services.loan_terms_calculator import loan_terms_calculator  # NEW
 import logging
 from typing import List
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(_name_)
 
 router = APIRouter()
 
@@ -27,14 +28,14 @@ async def calculate_loan_limit(application: SimpleLoanRequest):
     Calculate credit score and maximum loan limit based on customer profile.
     This is the FIRST step in the loan application flow.
     
-    **Flow:**
+    *Flow:*
     1. User fills in personal information (age, income, employment, etc.)
     2. System calculates credit score
     3. System calculates maximum loan limit
     4. User sees their credit score and loan limit
     5. User proceeds to Step 2 to select loan purpose
     
-    **Request Body:**
+    *Request Body:*
     - full_name: Customer's full name
     - age: Age (18-100)
     - monthly_income: Monthly income in VND
@@ -46,7 +47,7 @@ async def calculate_loan_limit(application: SimpleLoanRequest):
     - has_previous_defaults: Ever defaulted?
     - currently_defaulting: Currently in default?
     
-    **Returns:**
+    *Returns:*
     - credit_score: Calculated credit score (300-850)
     - loan_limit_vnd: Maximum loan amount in VND
     - risk_level: Risk assessment (Low/Medium/High/Very High)
@@ -54,7 +55,7 @@ async def calculate_loan_limit(application: SimpleLoanRequest):
     - message: Explanation
     """
     try:
-        logger.info(f"📊 Loan limit calculation for: {application.full_name}")
+        logger.info(f"Loan limit calculation for: {application.full_name}")
         
         # Convert simple request to internal format and calculate credit score
         internal_request = request_converter.convert_simple_to_prediction(application)
@@ -136,18 +137,18 @@ async def calculate_loan_terms(request: LoanTermsRequest):
     
     This is the SECOND step in the loan application flow.
     
-    **Flow:**
+    *Flow:*
     1. User has credit score and loan limit from Step 1
     2. User selects loan purpose (HOME, CAR, BUSINESS, etc.)
     3. User enters desired loan amount (must be ≤ loan limit)
     4. System calculates interest rate, term, and monthly payment
     
-    **Request Body:**
+    *Request Body:*
     - loan_amount: Desired loan amount in VND
     - loan_purpose: Purpose (HOME, CAR, BUSINESS, EDUCATION, etc.)
     - credit_score: Credit score from Step 1
     
-    **Returns:**
+    *Returns:*
     - loan_amount_vnd: Loan amount
     - loan_purpose: Purpose
     - interest_rate: Annual interest rate %
@@ -160,7 +161,7 @@ async def calculate_loan_terms(request: LoanTermsRequest):
     """
     try:
         logger.info(
-            f"💰 Loan terms calculation - Amount: {request.loan_amount:,.0f} VND, "
+            f"Loan terms calculation - Amount: {request.loan_amount:,.0f} VND, "
             f"Purpose: {request.loan_purpose}, Credit score: {request.credit_score}"
         )
         
@@ -205,7 +206,7 @@ async def predict_loan(request: PredictionRequest):
     
     Predict loan default probability based on applicant information
     
-    **Request Body:**
+    *Request Body:*
     - person_age: Age of the person (18-100)
     - person_income: Annual income
     - person_emp_length: Employment length in years
@@ -220,7 +221,7 @@ async def predict_loan(request: PredictionRequest):
     - cb_person_default_on_file: Previous default on file (Y/N)
     - previous_loan_defaults_on_file: Previous loan defaults (Y/N)
     
-    **Returns:**
+    *Returns:*
     - prediction: 0 (No Default) or 1 (Default)
     - probability: Probability of default (0-1)
     - risk_level: Low/Medium/High/Very High
@@ -252,7 +253,7 @@ async def batch_predict(requests: List[PredictionRequest]):
     
     Predict multiple loan applications at once
     
-    **Returns:**
+    *Returns:*
     - predictions: List of prediction results
     - count: Number of predictions made
     """
@@ -291,7 +292,7 @@ async def get_loan_offer(request: PredictionRequest):
     
     Get loan approval decision and offer details in Vietnamese Dong (VND)
     
-    **Request Body:**
+    *Request Body:*
     - person_age: Age of the person (18-100)
     - person_income: Annual income in USD (will be converted to VND)
     - person_emp_length: Employment length in years
@@ -306,7 +307,7 @@ async def get_loan_offer(request: PredictionRequest):
     - cb_person_default_on_file: Previous default on file (Y/N)
     - previous_loan_defaults_on_file: Previous loan defaults (Y/N)
     
-    **Returns:**
+    *Returns:*
     - approved: Whether loan is approved (true/false)
     - loan_amount_vnd: Approved loan amount in VND
     - requested_amount_vnd: Requested amount in VND
@@ -317,10 +318,10 @@ async def get_loan_offer(request: PredictionRequest):
     - risk_level: Risk assessment (Low/Medium/High/Very High)
     - approval_message: Detailed approval/rejection message
     
-    **Note:** Exchange rate: 1 USD = 25,000 VND (approximate)
+    *Note:* Exchange rate: 1 USD = 25,000 VND (approximate)
     """
     try:
-        logger.info(f"💰 Loan offer request - Age: {request.person_age}, Income: {request.person_income}, Loan: {request.loan_amnt}")
+        logger.info(f"Loan offer request - Age: {request.person_age}, Income: {request.person_income}, Loan: {request.loan_amnt}")
         
         # Get risk prediction first
         prediction_result = prediction_service.predict(request)
@@ -351,7 +352,7 @@ async def batch_loan_offers(requests: List[PredictionRequest]):
     
     Process multiple loan applications and get offers in VND
     
-    **Returns:**
+    *Returns:*
     - offers: List of loan offer results
     - count: Number of offers processed
     - summary: Statistics of approvals and rejections
@@ -410,9 +411,9 @@ async def apply_for_loan(application: SimpleLoanRequest):
     3. Recommends maximum loan amount you qualify for
     4. Assesses risk and sets interest rate
     
-    **NO NEED to specify loan amount** - the system calculates the maximum you can safely borrow!
+    *NO NEED to specify loan amount* - the system calculates the maximum you can safely borrow!
     
-    **Request Body:**
+    *Request Body:*
     - full_name: Customer's full name
     - age: Age (18-100)
     - monthly_income: Monthly income in VND
@@ -424,7 +425,7 @@ async def apply_for_loan(application: SimpleLoanRequest):
     - has_previous_defaults: Have you ever defaulted on a loan? (true/false)
     - currently_defaulting: Are you currently in default? (true/false)
     
-    **Returns:**
+    *Returns:*
     - approved: Whether you qualify for a loan (true/false)
     - loan_amount_vnd: Maximum recommended loan amount in VND
     - max_amount_vnd: Maximum eligible amount in VND
@@ -437,7 +438,7 @@ async def apply_for_loan(application: SimpleLoanRequest):
     - tier_reason: Why you were assigned this tier
     - approval_message: Detailed approval/rejection message
     
-    **Loan Tiers:**
+    *Loan Tiers:*
     - PLATINUM: Best rates, highest amounts (4.5x+ annual income)
     - GOLD: Great rates, high amounts (3.5x annual income)
     - SILVER: Good rates, moderate amounts (2.5x annual income)
@@ -492,7 +493,7 @@ async def calculate_credit_score(application: SimpleLoanRequest):
     Calculate credit score from customer information without applying for loan.
     Perfect for dashboard analytics and customer insights.
     
-    **Request Body:**
+    *Request Body:*
     - full_name: Customer's full name
     - age: Age (18-100)
     - monthly_income: Monthly income in VND
@@ -504,21 +505,21 @@ async def calculate_credit_score(application: SimpleLoanRequest):
     - has_previous_defaults: Have you ever defaulted on a loan?
     - currently_defaulting: Are you currently in default?
     
-    **Returns:**
+    *Returns:*
     - full_name: Customer name
     - credit_score: Calculated credit score (300-850)
     - loan_grade: Loan grade (A-G)
     - risk_level: Risk assessment
     - score_breakdown: Detailed breakdown showing how score was calculated
     
-    **Use Cases:**
+    *Use Cases:*
     - Display credit score on customer dashboard
     - Show score improvements over time
     - Analytics and reporting
     - Credit score tracking
     """
     try:
-        logger.info(f"📊 Credit score calculation for: {application.full_name}")
+        logger.info(f"Credit score calculation for: {application.full_name}")
         
         # For credit score calculation, use a standard 3-year personal loan as reference
         reference_loan_amount = application.monthly_income * 12 * 2  # 2x annual income
