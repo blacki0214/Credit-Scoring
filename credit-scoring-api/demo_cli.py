@@ -274,5 +274,5 @@ def main():
     except Exception as e:
         print(f"\n{Colors.FAIL}Unexpected error: {e}{Colors.ENDC}")
 
-if _name_ == "_main_":
+if __name__ == "__main__":
     main()
