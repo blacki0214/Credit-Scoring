@@ -14,7 +14,7 @@ from app.services.loan_terms_calculator import loan_terms_calculator  # NEW
 import logging
 from typing import List
 
-logger = logging.getLogger(_name_)
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
