@@ -1,4 +1,3 @@
-
 from fastapi import APIRouter, HTTPException, status
 from app.models.schemas import (
     PredictionRequest, PredictionResponse, LoanOfferResponse, 
