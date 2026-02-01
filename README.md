@@ -1,561 +1,400 @@
-# 🏦 Credit Scoring System - Smart Loan Approval Platform
+# Credit Scoring API
 
-![Python](https://img.shields.io/badge/Python-3.10-blue.svg)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.104-green.svg)
-![LightGBM](https://img.shields.io/badge/LightGBM-Latest-orange.svg)
-![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)
-![License](https://img.shields.io/badge/License-MIT-yellow.svg)
+**AI-powered loan approval system - Simple, Fast, Accurate**
 
-> **A complete AI-powered loan approval system with customer-friendly API in Vietnamese Dong (VND)**
+
+*Live Demo:* https://credit-scoring-h7mv.onrender.com/docs
 
 ---
 
-## 🎯 What This Project Does
+## Quick Start
 
-This is a **complete loan approval system** that helps banks and financial institutions:
-
-**Automatically approve or reject loans** based on customer information  
-**Calculate credit scores** (300-850) from simple customer data  
-**Determine loan amounts** customers can get in VND  
-**Assess risk levels** (Low, Medium, High, Very High)  
-**Provide instant decisions** - no manual review needed  
-
-### 💡 Perfect For
-
-- **Banks** wanting to automate loan decisions
-- **Fintech Apps** needing credit scoring
-- **Lending Platforms** in Vietnam (VND support)
-- **Students** learning ML and API development
-
----
-
-## ⚡ Quick Demo
-
-**Customer applies for 100 million VND loan:**
-```json
-Input: {
-  "full_name": "Nguyen Van A",
-  "age": 30,
-  "monthly_income": 15000000,  // 15 million VND/month
-  "loan_amount": 100000000      // 100 million VND
-}
-
-Output: {
-  "approved": true,
-  "credit_score": 785,           // Auto-calculated!
-  "monthly_payment_vnd": 3156754,
-  "interest_rate": 8.5,
-  "risk_level": "Low"
-}
-```
-
-**That's it!** No complex data needed. System calculates everything automatically.
-
----
-
-## 📂 Project Structure (Simple)
-
-```
-Credit-Scoring/
-│
-├── 🚀 credit-scoring-api/        ⭐ THE MAIN API (START HERE!)
-│   ├── app/                      Production-ready FastAPI
-│   ├── models/                   AI models (LightGBM)
-│   ├── tests/                    All tests passing ✅
-│   ├── docker-compose.yml        One command to run!
-│   └── README.md                 API documentation
-│
-├── 📊 notebooks/                 How the AI was built
-│   └── parquet_files/           Step-by-step analysis
-│
-├── 💾 data/                      Training data
-│   ├── application_train.csv    Customer data
-│   ├── bureau.csv               Credit history
-│   └── ...                      More datasets
-│
-├── 📈 output/                    Saved models
-│   └── models/
-│       ├── lgb_model_optimized.pkl        The main AI
-│       └── ensemble_comparison_metadata.pkl
-│
-└── 📚 docs/                      Guides
-    └── API_GUIDE.md
-```
-
-### Where to Start?
-
-1. **Want to use the API?** → Go to `credit-scoring-api/` folder
-2. **Want to understand the AI?** → Check `notebooks/` folder  
-3. **Want to see the data?** → Look in `data/` folder
-
----
-
-## 🚀 Getting Started (3 Easy Steps)
-
-### Step 1: Clone This Project
-
-```bash
-git clone https://github.com/blacki0214/Credit-Scoring.git
-cd Credit-Scoring
-```
-
-### Step 2: Go to API Folder
-
-```bash
-cd credit-scoring-api
-```
-
-### Step 3: Run with Docker (Easiest!)
-
-```bash
+# Option 1: Docker (Recommended)
 docker-compose up -d
-```
 
-**That's it!** Your API is now running at `http://localhost:8000`
+# Option 2: Local
+pip install -r requirements.txt
+uvicorn app.main:app --reload --port 8000
 
-### 🌐 Open API Documentation
-
-Go to: **http://localhost:8000/api/docs**
-
-You'll see a beautiful interactive interface where you can test everything!
+*Open:* https://credit-scoring-h7mv.onrender.com/docs
 
 ---
 
-## 📱 How to Use the API (4 Endpoints)
+## API Endpoints
 
-### 1️⃣ `/api/apply` - Customer Loan Application ⭐ **RECOMMENDED**
+### 1. Two-Step Flow (Recommended for Mobile Apps)
 
-**Best for:** Customer-facing apps, mobile apps, websites
+#### Step 1: Calculate Loan Limit
 
-```javascript
-// Customer fills simple form
-POST http://localhost:8000/api/apply
+*Endpoint:* POST /api/calculate-limit
+
+*Purpose:* Get credit score and maximum loan amount after user fills personal info
+
+*Request:*
 {
   "full_name": "Nguyen Van A",
   "age": 30,
-  "monthly_income": 15000000,        // VND
+  "monthly_income": 20000000,
   "employment_status": "EMPLOYED",
   "years_employed": 5.0,
   "home_ownership": "RENT",
-  "loan_amount": 100000000,          // VND
-  "loan_purpose": "PERSONAL",
+  "loan_purpose": "CAR",
   "years_credit_history": 3,
   "has_previous_defaults": false,
   "currently_defaulting": false
 }
 
-// Instant response
+*Response:*
 {
+  "credit_score": 750,
+  "loan_limit_vnd": 420000000,
+  "risk_level": "Low",
   "approved": true,
-  "credit_score": 785,                // Auto-calculated!
-  "loan_amount_vnd": 100000000,
-  "monthly_payment_vnd": 3156754,
-  "interest_rate": 8.5,
-  "loan_term_months": 36,
-  "risk_level": "Low",
-  "approval_message": "Loan approved!"
+  "message": "Credit score: 750. Maximum loan: 420M VND"
 }
-```
-
-### 2️⃣ `/api/credit-score` - Credit Score Calculator ⭐ **FOR DASHBOARDS**
-
-**Best for:** Customer dashboards, analytics, credit tracking
-
-```javascript
-POST http://localhost:8000/api/credit-score
-// Same input as /api/apply
-
-// Response shows HOW score was calculated
-{
-  "credit_score": 785,
-  "loan_grade": "A",
-  "risk_level": "Low",
-  "score_breakdown": {
-    "base_score": 650,
-    "age_adjustment": +30,
-    "income_adjustment": +30,
-    "employment_adjustment": +30,
-    "home_ownership_adjustment": +5,
-    "credit_history_adjustment": +20,
-    "employment_status_adjustment": +20,
-    "defaults_adjustment": 0,
-    "debt_to_income_adjustment": 0,
-    "final_score": 785
-  }
-}
-```
-
-### 3️⃣ `/api/health` - Check if API is Running
-
-```javascript
-GET http://localhost:8000/api/health
-// Response
-{
-  "status": "healthy",
-  "models_loaded": true
-}
-```
-
-### 4️⃣ `/api/model/info` - AI Model Information
-
-```javascript
-GET http://localhost:8000/api/model/info
-// Get details about the AI
-```
 
 ---
 
-## Integration Examples
+#### Step 2: Calculate Loan Terms
 
-### React/Next.js Example
+*Endpoint:* POST /api/calculate-terms
 
-```javascript
-async function applyForLoan() {
-  const response = await fetch('http://localhost:8000/api/apply', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      full_name: 'Nguyen Van A',
-      age: 30,
-      monthly_income: 15000000,
-      employment_status: 'EMPLOYED',
-      years_employed: 5.0,
-      home_ownership: 'RENT',
-      loan_amount: 100000000,
-      loan_purpose: 'PERSONAL',
-      years_credit_history: 3,
-      has_previous_defaults: false,
-      currently_defaulting: false
-    })
-  });
-  
-  const result = await response.json();
-  
-  if (result.approved) {
-    alert(`Approved! Credit Score: ${result.credit_score}`);
-  } else {
-    alert('Sorry, loan not approved');
-  }
+*Purpose:* Get interest rate and payment details after user selects purpose
+
+*Request:*
+{
+  "loan_amount": 300000000,
+  "loan_purpose": "CAR",
+  "credit_score": 750
 }
-```
+
+*Response:*
+{
+  "interest_rate": 6.5,
+  "loan_term_months": 60,
+  "monthly_payment_vnd": 5869844,
+  "total_payment_vnd": 352190668,
+  "total_interest_vnd": 52190668
+}
+
+---
+
+### 2. One-Step Flow (Legacy)
+
+*Endpoint:* POST /api/apply
+
+*Purpose:* Complete loan application in one call
+
+*Request:* Same as Step 1 + loan_amount field
+
+*Response:* Combined result with approval decision + loan terms
+
+---
+
+### 3. Utility Endpoints
+
+- **GET /api/health** - Check API status
+- **GET /api/model/info** - Get AI model details
+- **POST /api/credit-score** - Calculate credit score only (for dashboards)
+
+---
+
+## How It Works
+
+### Credit Score (300-850)
+
+*Formula:* Base (650) + Adjustments
+
+| Factor | Good | Points |
+|--------|------|--------|
+| Age | 25-60 | +30 |
+| Income | >15M/month | +40 |
+| Employment | 5+ years | +35 |
+| Home | Own/Mortgage | +20 |
+| Credit History | 3+ years | +20 |
+| Defaults | None | +20 |
+
+*Example:* Age 30 + Income 20M + 5 years employed + Rent + 3 years history + No defaults = *750 points*
+
+---
+
+### Loan Limit
+
+*Formula:* Annual Income × Credit Score Multiplier × Risk Adjustment
+
+*Credit Score Multipliers:*
+- 780+: *5.0x* (Excellent)
+- 740-779: *4.0x* (Very Good)
+- 700-739: *3.0x* (Good)
+- 650-699: *2.5x* (Fair)
+- 600-649: *2.0x* (Poor)
+- <600: *1.5x* (Very Poor)
+
+*Risk Adjustments:*
+- High Risk: *-30%*
+- Very High Risk: *-50%*
+
+*Example:* 
+- Income: 20M/month × 12 = 240M/year
+- Credit Score: 750 → 4.0x multiplier
+- Loan Limit: 240M × 4.0 = *960M VND*
+
+---
+
+### Interest Rates
+
+*Formula:* Base Rate (by Purpose) + Credit Score Adjustment
+
+*Base Rates:*
+
+| Purpose | Rate | Term | Example Monthly Payment (300M VND) |
+|---------|------|------|-----------------------------------|
+| HOME | 6.5% | 20 years | 2.2M VND |
+| CAR | 7.5% | 5 years | 6.0M VND |
+| BUSINESS | 9.0% | 7 years | 4.7M VND |
+| EDUCATION | 8.0% | 5 years | 6.1M VND |
+| PERSONAL | 11.0% | 3 years | 9.8M VND |
+
+*Credit Score Adjustments:*
+- 780+: *-2.0%* (Best rate)
+- 740-779: *-1.0%*
+- 700-739: *0%* (Standard)
+- 650-699: *+1.5%*
+- 600-649: *+3.0%*
+- <600: *+5.0%* (Highest rate)
+
+*Example:* CAR loan with 750 credit score = 7.5% - 1.0% = *6.5% final rate*
+
+---
+
+## Integration Guide
 
 ### Python Example
 
-```python
 import requests
 
-response = requests.post(
-    'http://localhost:8000/api/apply',
-    json={
-        'full_name': 'Nguyen Van A',
-        'age': 30,
-        'monthly_income': 15000000,
-        'employment_status': 'EMPLOYED',
-        'years_employed': 5.0,
-        'home_ownership': 'RENT',
-        'loan_amount': 100000000,
-        'loan_purpose': 'PERSONAL',
-        'years_credit_history': 3,
-        'has_previous_defaults': False,
-        'currently_defaulting': False
-    }
-)
+API_URL = "http://localhost:8000"
 
-result = response.json()
-print(f"Approved: {result['approved']}")
-print(f"Credit Score: {result['credit_score']}")
-```
+# Step 1: Get loan limit
+response = requests.post(f"{API_URL}/api/calculate-limit", json={
+    "full_name": "Nguyen Van A",
+    "age": 30,
+    "monthly_income": 20000000,
+    "employment_status": "EMPLOYED",
+    "years_employed": 5.0,
+    "home_ownership": "RENT",
+    "loan_purpose": "CAR",
+    "years_credit_history": 3,
+    "has_previous_defaults": False,
+    "currently_defaulting": False
+})
 
----
+limit_data = response.json()
+print(f"Credit Score: {limit_data['credit_score']}")
+print(f"Max Loan: {limit_data['loan_limit_vnd']:,} VND")
 
-## The AI Behind It
+# Step 2: Get loan terms
+response = requests.post(f"{API_URL}/api/calculate-terms", json={
+    "loan_amount": 300000000,
+    "loan_purpose": "CAR",
+    "credit_score": limit_data['credit_score']
+})
 
-### What Model We Use
+terms = response.json()
+print(f"Interest: {terms['interest_rate']}%")
+print(f"Monthly: {terms['monthly_payment_vnd']:,} VND")
+print(f"Total: {terms['total_payment_vnd']:,} VND")
 
-**LightGBM** - A fast, accurate machine learning algorithm
+### JavaScript Example
 
-- Trained on **300,000+ real loan applications**
-- **64 smart features** engineered from simple inputs
-- **72%+ accuracy** in predicting loan defaults
+const API_URL = 'http://localhost:8000';
 
-### How It Works
+// Step 1: Get loan limit
+const limitResponse = await fetch(`${API_URL}/api/calculate-limit`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    full_name: "Nguyen Van A",
+    age: 30,
+    monthly_income: 20000000,
+    employment_status: "EMPLOYED",
+    years_employed: 5.0,
+    home_ownership: "RENT",
+    loan_purpose: "CAR",
+    years_credit_history: 3,
+    has_previous_defaults: false,
+    currently_defaulting: false
+  })
+});
 
-```
-Customer Data (11 simple fields)
-        ↓
-Feature Engineering (Auto-creates 64 features)
-        ↓
-LightGBM AI Model (Predicts risk)
-        ↓
-Credit Score Calculation (300-850)
-        ↓
-Loan Decision (Approve/Reject + Amount)
-```
+const limitData = await limitResponse.json();
+console.log(`Credit Score: ${limitData.credit_score}`);
+console.log(`Max Loan: ${limitData.loan_limit_vnd.toLocaleString()} VND`);
 
-### Accuracy Stats
+// Step 2: Get loan terms
+const termsResponse = await fetch(`${API_URL}/api/calculate-terms`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    loan_amount: 300000000,
+    loan_purpose: "CAR",
+    credit_score: limitData.credit_score
+  })
+});
 
-| Metric | Value | What It Means |
-|--------|-------|---------------|
-| **ROC-AUC** | 72% | How well we separate good/bad loans |
-| **Precision** | 45% | Of rejections, 45% would default |
-| **Recall** | 55% | We catch 55% of bad loans |
-| **Response Time** | <100ms | Super fast! |
-
----
-
-## Understanding the Data
-
-### Input: Simple Customer Information
-
-Only **11 easy fields** needed:
-
-1. **Full Name** - Customer name
-2. **Age** - 18 to 100
-3. **Monthly Income** - In VND
-4. **Employment Status** - EMPLOYED, SELF_EMPLOYED, UNEMPLOYED
-5. **Years Employed** - How long at current job
-6. **Home Ownership** - RENT, OWN, MORTGAGE, LIVING_WITH_PARENTS
-7. **Loan Amount** - Requested amount in VND
-8. **Loan Purpose** - What they need money for
-9. **Years Credit History** - How long they've had credit
-10. **Has Previous Defaults** - Yes/No
-11. **Currently Defaulting** - Yes/No
-
-### Output: Complete Loan Decision
-
-The API returns **everything you need**:
-
-- **Approved or Rejected** - Clear decision
-- **Credit Score** - 300-850 (auto-calculated)
-- **Loan Amount in VND** - How much they can borrow
-- **Monthly Payment** - Exact payment in VND
-- **Interest Rate** - Based on credit score
-- **Risk Level** - Low/Medium/High/Very High
-- **Approval Message** - Human-readable explanation
+const terms = await termsResponse.json();
+console.log(`Interest: ${terms.interest_rate}%`);
+console.log(`Monthly: ${terms.monthly_payment_vnd.toLocaleString()} VND`);
 
 ---
 
-## 🎓 How Credit Score is Calculated
+## Deployment
 
-The system automatically calculates credit score (300-850) based on:
+### Docker Deployment
 
-| Factor | Impact | Max Points |
-|--------|--------|------------|
-| **Base Score** | Everyone starts here | 650 |
-| **Age** | Older = more stable | +50 |
-| **Income** | Higher = better | +50 |
-| **Employment** | Longer = more stable | +40 |
-| **Home Ownership** | Own > Mortgage > Rent | +30 |
-| **Credit History** | Longer = better | +40 |
-| **Employment Status** | Employed > Self-employed | +20 |
-| **Previous Defaults** | Major penalty | -80 to -150 |
-| **Debt-to-Income** | Lower is better | -0 to -50 |
-
-**Example Calculation:**
-```
-Base: 650
-Age 30: +30
-Income 15M VND: +30
-Employed 5 years: +30
-Renting: +5
-Credit history 3 years: +20
-Employed: +20
-No defaults: 0
-Good DTI: 0
-───────────
-Total: 785 ⭐
-```
-
----
-
-## 🐳 Docker Commands (Easy!)
-
-### Start the API
-```bash
-cd credit-scoring-api
+*1. Build and run:*
 docker-compose up -d
-```
 
-### Check if it's running
-```bash
-docker ps
-```
+*2. Check logs:*
+docker-compose logs -f
 
-### View logs
-```bash
-docker logs credit-scoring-api
-```
-
-### Stop the API
-```bash
+*3. Stop:*
 docker-compose down
-```
-
-### Rebuild after changes
-```bash
-docker-compose up --build -d
-```
 
 ---
 
-## 🧪 Testing
+### Cloud Deployment (Render/Railway/Heroku)
 
-All tests are passing! ✅
+**1. Create Dockerfile** (already included)
 
-```bash
-cd credit-scoring-api
-pytest tests/
-```
+*2. Set environment variables:*
+API_VERSION=2.0.0
+MODEL_PATH=models/lgb_model_optimized.pkl
 
-**Test Results:** 10/10 passing
-- Health check ✅
-- Model info ✅  
-- Predictions ✅
-- Loan offers ✅
-- Credit score ✅
-- Customer applications ✅
+*3. Deploy:*
+- *Render:* Connect GitHub repo → Auto-deploy
+- *Railway:* railway up
+- *Heroku:* git push heroku main
+
+*4. Health check endpoint:* /api/health
 
 ---
 
-## 📚 Complete Documentation
+### Local Development
 
-| Document | Purpose | Link |
-|----------|---------|------|
-| **Customer API Guide** | How to use `/api/apply` | [CUSTOMER_API_GUIDE.md](credit-scoring-api/CUSTOMER_API_GUIDE.md) |
-| **Dashboard Guide** | Build dashboards with `/api/credit-score` | [DASHBOARD_GUIDE.md](credit-scoring-api/DASHBOARD_GUIDE.md) |
-| **API Documentation** | All endpoints explained | [README.md](credit-scoring-api/README.md) |
-| **API Docs (Interactive)** | Test API in browser | http://localhost:8000/api/docs |
+*1. Install dependencies:*
+pip install -r requirements.txt
 
----
+*2. Run server:*
+uvicorn app.main:app --reload --port 8000
 
-## 💡 Common Use Cases
-
-### 1. Mobile Banking App
-```javascript
-// Customer applies for loan in app
-const result = await applyForLoan(customerData);
-if (result.approved) {
-  showApprovalScreen(result.loan_amount_vnd, result.monthly_payment_vnd);
-}
-```
-
-### 2. Customer Dashboard
-```javascript
-// Show credit score on dashboard
-const scoreData = await getCreditScore(customerData);
-displayCreditScore(scoreData.credit_score, scoreData.score_breakdown);
-```
-
-### 3. Admin Panel
-```javascript
-// Process multiple applications
-const results = await batchProcessLoans(applications);
-showApprovalStats(results);
-```
+*3. Run tests:*
+python test_api.py
 
 ---
 
-## 🛠️ Tech Stack (Simple Explanation)
+## Tech Stack
 
-### What We Use:
-
-- **Python 3.10** - Programming language
-- **FastAPI** - Builds the web API (super fast!)
-- **LightGBM** - The AI brain (machine learning)
-- **Docker** - Packages everything to run anywhere
-- **Pydantic** - Makes sure data is correct
-- **Pytest** - Tests everything automatically
-
-### Why These?
-
-- **Fast** - API responds in <100ms
-- **Reliable** - All tests passing
-- **Easy** - One command to start (`docker-compose up`)
-- **Smart** - AI trained on 300,000+ loans
+- *Framework:* FastAPI (Python 3.10+)
+- *ML Model:* LightGBM
+- *Accuracy:* 72% ROC-AUC
+- *Training Data:* 300,000+ real loan applications
+- *Features:* 64 auto-engineered features
+- *Response Time:* <100ms average
 
 ---
 
-## Roadmap
+## API Changes (v2.0)
 
-### Completed
-- [x] AI model training (LightGBM)
-- [x] Feature engineering (13 → 64 features)
-- [x] REST API with FastAPI
-- [x] Customer-friendly endpoints
-- [x] Credit score calculator
-- [x] Docker deployment
-- [x] VND currency support
-- [x] All tests passing (10/10)
-- [x] Complete documentation
+### What's New
+- /api/calculate-limit - New 2-step flow (Step 1)
+- /api/calculate-terms - New 2-step flow (Step 2)
+- Credit score-based loan limits (replaced tier system)
+- Purpose-based interest rates
 
-### Coming Soon
-- [ ] React dashboard example
-- [ ] Mobile app integration guide
-- [ ] Real-time monitoring
-- [ ] A/B testing
-- [ ] Auto-model retraining
-- [ ] Multi-language support
+### What's Removed
+- loan_tier field (PLATINUM/GOLD/SILVER/BRONZE)
+- tier_reason field
+- Tier-based multipliers
+
+### Migration
+Old /api/apply endpoint still works, just without tier fields. Update your code to remove references to loan_tier and tier_reason.
 
 ---
 
-## 📄 License
+## Testing
 
-MIT License - Free to use, modify, and distribute!
+*Interactive API Docs:*
+- Local: http://localhost:8000/docs
+- Live: https://credit-scoring-h7mv.onrender.com/docs
 
----
+*Test Script:*
+python test_api.py
 
-## 👨‍💻 Author
+*Sample Test Cases:*
 
-**Nguyen Van Quoc**
-
-- 📧 Email: vanquoc11082004@gmail.com
-- 🐙 GitHub: [@blacki0214](https://github.com/blacki0214)
-- 💼 LinkedIn: [Nguyen Van Quoc](https://www.linkedin.com/in/quoc-nguyen-van-7898ba255/)
-
----
-
-## 🙏 Acknowledgments
-
-- **Dataset**: Home Credit Default Risk (Kaggle)
-- **Inspiration**: Real-world banking systems
-- **Tools**: Amazing open-source community
+| Scenario | Credit Score | Income | Expected Limit |
+|----------|--------------|--------|----------------|
+| Excellent | 800 | 30M/month | 1.8B VND |
+| Good | 720 | 20M/month | 720M VND |
+| Fair | 670 | 15M/month | 450M VND |
+| Poor | 620 | 10M/month | 240M VND |
 
 ---
 
-## ⚠️ Important Disclaimer
+## Troubleshooting
 
-**This is an educational/demo project.**
+*API not starting?*
+# Check if port 8000 is in use
+netstat -ano | findstr :8000
 
-For production use in real financial services:
-- Add user authentication
-- Implement rate limiting
-- Add encryption (HTTPS)
-- Comply with regulations (FCRA, GDPR, etc.)
-- Get legal and financial expert review
-- Add fraud detection
-- Implement audit logs
+# Use different port
+uvicorn app.main:app --port 8001
 
----
+*Model not loading?*
+# Check model file exists
+ls models/lgb_model_optimized.pkl
 
-## 🚀 Ready to Start?
+# Check file size (should be ~14KB)
 
-```bash
-# 1. Clone
-git clone https://github.com/blacki0214/Credit-Scoring.git
-
-# 2. Go to API
-cd Credit-Scoring/credit-scoring-api
-
-# 3. Run
-docker-compose up -d
-
-# 4. Open browser
-# http://localhost:8000/api/docs
-
-# 5. Start building! 🎉
-```
+*Slow response?*
+- First request is slower (model loading)
+- Subsequent requests: <100ms
+- Check server resources (CPU/RAM)
 
 ---
 
-**Last Updated**: November 26, 2025  
-**Status**: Production Ready ✅
+## Project Structure
+
+credit-scoring-api/
+├── app/
+│   ├── api/routes/          # API endpoints
+│   ├── services/            # Business logic
+│   │   ├── loan_limit_calculator.py
+│   │   ├── loan_terms_calculator.py
+│   │   └── smart_loan_offer.py
+│   ├── models/schemas.py    # Request/Response models
+│   └── main.py             # FastAPI app
+├── models/                  # ML models
+├── tests/                   # Test files
+├── Dockerfile
+├── docker-compose.yml
+└── README.md               # This file
+
+---
+
+## License
+
+MIT License - Free to use for commercial and personal projects
+
+---
+
+## Support
+
+- *API Docs:* https://credit-scoring-h7mv.onrender.com/docs
+- *Issues:* Create GitHub issue
+- *Questions:* Check API docs first
+
+---
+
+*Built with FastAPI + LightGBM | Made in Vietnam*
