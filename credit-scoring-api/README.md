@@ -433,3 +433,4 @@ MIT License - Free to use for commercial and personal projects
 ---
 
 **Built with FastAPI + LightGBM | Made in Vietnam**
+-
