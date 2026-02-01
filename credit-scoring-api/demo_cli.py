@@ -121,7 +121,7 @@ def get_customer_input() -> Dict[str, Any]:
         "currently_defaulting": currently_defaulting
     }
 
-def display_step1_result(data: Dict[str, Any]):
+def display_step1_result(data: Dict[str, Any], customer_data: Dict[str, Any]):
     """Display Step 1 results (loan limit)"""
     print(f"\n{Colors.HEADER}{'=' * 70}{Colors.ENDC}")
     print(f"{Colors.HEADER}STEP 1 RESULTS - LOAN LIMIT CALCULATION{Colors.ENDC}")
@@ -132,61 +132,37 @@ def display_step1_result(data: Dict[str, Any]):
     print(f"Monthly Income: {format_currency(customer_data['monthly_income'])}")
     print(f"Loan Purpose: {customer_data['loan_purpose']}\n")
     
-    # Tier
-    tier = result.get('loan_tier', 'N/A')
-    tier_emoji = print_tier_emoji(tier)
-    print(f"{tier_emoji} TIER: {tier}")
-    print(f"   {result.get('tier_reason', 'N/A')}\n")
-    
     # Approval status
-    if result.get('approved'):
-        print(f"LOAN APPROVED!")
+    if data.get('approved'):
+        print(f"{Colors.OKGREEN}✅ LOAN APPROVED!{Colors.ENDC}\n")
         
         # Loan details
-        loan_amount = result.get('loan_amount_vnd', 0)
-        print(f"💵 Maximum Loan Amount:")
-        print(f"   {format_currency(loan_amount)}")
+        loan_amount = data.get('max_loan_amount_vnd', 0)
+        print(f"{Colors.BOLD}💵 Maximum Loan Amount:{Colors.ENDC}")
+        print(f"   {Colors.OKGREEN}{format_currency(loan_amount)}{Colors.ENDC}")
         print(f"   ({loan_amount:,.0f} VND)\n")
         
-        monthly_payment = result.get('monthly_payment_vnd', 0)
-        print(f"Monthly Payment:")
-        print(f"   {format_currency(monthly_payment)}")
-        print(f"   ({monthly_payment:,.0f} VND/month)\n")
+        credit_score = data.get('credit_score', 0)
+        print(f"{Colors.BOLD}Credit Score:{Colors.ENDC} {credit_score}/850")
         
-        loan_term = result.get('loan_term_months', 0)
-        print(f"Loan Term: {loan_term} months ({loan_term//12} years)")
+        risk_level = data.get('risk_level', 'N/A')
+        risk_colors = {
+            "Low": Colors.OKGREEN,
+            "Medium": Colors.WARNING,
+            "High": Colors.FAIL,
+            "Very High": Colors.FAIL
+        }
+        risk_color = risk_colors.get(risk_level, Colors.ENDC)
+        print(f"{Colors.BOLD}Risk Level:{Colors.ENDC} {risk_color}{risk_level}{Colors.ENDC}\n")
         
-        interest_rate = result.get('interest_rate', 0)
-        print(f"Interest Rate: {interest_rate}% per year\n")
-        
-        credit_score = result.get('credit_score', 0)
-        print(f"Credit Score: {credit_score}/850")
-        
-        risk_level = result.get('risk_level', 'N/A')
-        risk_color = Colors.OKGREEN if risk_level == "Low" else Colors.WARNING
-        print(f"Risk Level: {risk_level}\n")
-        
-        # Summary
-        print(f"💬 Message:")
-        print(f"   {result.get('approval_message', 'N/A')}")
+        # Message
+        print(f"{Colors.BOLD}💬 Message:{Colors.ENDC}")
+        print(f"   {data.get('message', 'N/A')}")
         
     else:
-        print(f"  {Colors.FAIL}0 VND (Not Approved){Colors.ENDC}")
-    
-    # Risk Level
-    risk = data['risk_level']
-    risk_colors = {
-        "Low": Colors.OKGREEN,
-        "Medium": Colors.WARNING,
-        "High": Colors.FAIL,
-        "Very High": Colors.FAIL
-    }
-    print(f"\n{Colors.BOLD}Risk Level:{Colors.ENDC}")
-    print(f"  {risk_colors.get(risk, Colors.ENDC)}{risk}{Colors.ENDC}")
-    
-    # Message
-    print(f"\n{Colors.BOLD}Message:{Colors.ENDC}")
-    print(f"  {data['message']}")
+        print(f"{Colors.FAIL}❌ LOAN NOT APPROVED{Colors.ENDC}\n")
+        print(f"{Colors.BOLD}Reason:{Colors.ENDC}")
+        print(f"   {data.get('message', 'Application does not meet minimum requirements')}")
 
 def display_step2_result(data: Dict[str, Any], loan_amount: float):
     """Display Step 2 results (loan terms)"""
@@ -222,14 +198,15 @@ def run_demo():
     
     # Check API connection
     try:
-        response = requests.get(f"{API_BASE.replace('/api', '')}/api/health", timeout=5)
+        print(f"{Colors.OKCYAN}⏳ Connecting to cloud API (this may take 30-60 seconds on first request)...{Colors.ENDC}")
+        response = requests.get(f"{API_BASE.replace('/api', '')}/api/health", timeout=60)
         if response.status_code != 200:
             print(f"{Colors.FAIL}Error: API is not responding properly{Colors.ENDC}")
             return
-        print(f"{Colors.OKGREEN}API is running!{Colors.ENDC}\n")
-    except requests.exceptions.RequestException:
+        print(f"{Colors.OKGREEN}✅ API is running!{Colors.ENDC}\n")
+    except requests.exceptions.RequestException as e:
         print(f"{Colors.FAIL}Error: Cannot connect to API at {API_BASE}{Colors.ENDC}")
-        print(f"{Colors.WARNING}Make sure the API is running: uvicorn app.main:app --reload{Colors.ENDC}")
+        print(f"{Colors.WARNING}Error details: {str(e)}{Colors.ENDC}")
         return
     
     # Get customer input
@@ -239,19 +216,20 @@ def run_demo():
     
     # STEP 1: Calculate Loan Limit
     try:
-        response = requests.post(CALCULATE_LIMIT_URL, json=customer_data)
+        print(f"{Colors.OKCYAN}⏳ Calculating loan limit...{Colors.ENDC}")
+        response = requests.post(CALCULATE_LIMIT_URL, json=customer_data, timeout=60)
         response.raise_for_status()
         step1_data = response.json()
         
-        display_step1_result(step1_data)
+        display_step1_result(step1_data, customer_data)
         
         if not step1_data['approved']:
             print(f"\n{Colors.FAIL}Application rejected. Cannot proceed to Step 2.{Colors.ENDC}")
             return
         
     except requests.exceptions.RequestException as e:
-        print(f"Error connecting to API: {e}")
-        print(f"\nMake sure the API is running at {API_URL}")
+        print(f"{Colors.FAIL}Error connecting to API: {e}{Colors.ENDC}")
+        return
 
 def show_comparison():
     """Show same customer, different purposes"""
@@ -284,7 +262,7 @@ def show_comparison():
         customer_data = {**base_customer, "loan_purpose": purpose}
         
         try:
-            response = requests.post(API_URL, json=customer_data, timeout=10)
+            response = requests.post(CALCULATE_LIMIT_URL, json=customer_data, timeout=10)
             response.raise_for_status()
             result = response.json()
             
@@ -309,22 +287,18 @@ def main():
     while True:
         print_header()
         print("Select Demo Mode:\n")
-        print("  1. Quick Demo (4 pre-defined scenarios)")
-        print("  2. Custom Input (enter your own data)")
-        print("  3. Comparison Demo (same customer, different purposes)")
-        print("  4. Exit\n")
+        print("  1. Custom Input (enter your own data)")
+        print("  2. Comparison Demo (same customer, different purposes)")
+        print("  3. Exit\n")
         
-        choice = input("Your choice (1-4): ").strip()
+        choice = input("Your choice (1-3): ").strip()
         
         if choice == "1":
-            run_quick_demo()
+            run_demo()
             input(f"\nPress Enter to return to menu...")
         elif choice == "2":
-            run_custom_demo()
-            input(f"\nPress Enter to return to menu...")
-        elif choice == "3":
             show_comparison()
-        elif choice == "4":
+        elif choice == "3":
             print(f"\nThank you for using the demo! 👋\n")
             break
         else:
@@ -332,17 +306,17 @@ def main():
             input("Press Enter to continue...")
 
 if __name__ == "__main__":
-    print(f"\n⚠️ Make sure the API is running first!")
-    print(f"Run: docker-compose up -d\n")
+    print(f"\n🌐 Connecting to Cloud API...")
+    print(f"API Endpoint: {API_BASE}\n")
     
     try:
-        # Test connection
-        response = requests.get("http://localhost:8000/api/health", timeout=5)
-        print(f"✅ API is running!\n")
+        # Test connection to cloud API
+        print(f"{Colors.OKCYAN}⏳ Testing connection (this may take 30-60 seconds on first request)...{Colors.ENDC}")
+        response = requests.get(f"{API_BASE.replace('/api', '')}/api/health", timeout=60)
+        print(f"{Colors.OKGREEN}✅ Connected to cloud API: {API_BASE}{Colors.ENDC}\n")
         input("Press Enter to start demo...")
         main()
-    except:
-        print(f"❌ Cannot connect to API at {API_URL}")
-        print(f"\nPlease start the API first:")
-        print("  cd credit-scoring-api")
-        print("  docker-compose up -d\n")
+    except Exception as e:
+        print(f"{Colors.FAIL}❌ Cannot connect to API at {API_BASE}{Colors.ENDC}")
+        print(f"{Colors.WARNING}Error: {str(e)}{Colors.ENDC}")
+        print(f"\nPlease check your internet connection or try again later.\n")
