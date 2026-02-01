@@ -49,6 +49,16 @@ def print_header():
     print("=" * 70)
     print(f"{Colors.ENDC}\n")
 
+def print_tier_emoji(tier: str) -> str:
+    """Get emoji for tier"""
+    emojis = {
+        "BRONZE": "🥉",
+        "SILVER": "🥈",
+        "GOLD": "🥇",
+        "PLATINUM": "🌟"
+    }
+    return emojis.get(tier, "")
+
 def format_currency(amount: float) -> str:
     """Format amount in VND"""
     if amount >= 1_000_000_000:
@@ -117,29 +127,49 @@ def display_step1_result(data: Dict[str, Any]):
     print(f"{Colors.HEADER}STEP 1 RESULTS - LOAN LIMIT CALCULATION{Colors.ENDC}")
     print(f"{Colors.HEADER}{'=' * 70}{Colors.ENDC}\n")
     
-    # Credit Score
-    score = data['credit_score']
-    if score >= 740:
-        score_color = Colors.OKGREEN
-        score_rating = "Excellent"
-    elif score >= 700:
-        score_color = Colors.OKCYAN
-        score_rating = "Very Good"
-    elif score >= 650:
-        score_color = Colors.OKBLUE
-        score_rating = "Good"
-    else:
-        score_color = Colors.WARNING
-        score_rating = "Fair"
+    # Customer info
+    print(f"Customer: {customer_data['full_name']}")
+    print(f"Monthly Income: {format_currency(customer_data['monthly_income'])}")
+    print(f"Loan Purpose: {customer_data['loan_purpose']}\n")
     
-    print(f"{Colors.BOLD}Credit Score:{Colors.ENDC}")
-    print(f"  {score_color}{score} / 850{Colors.ENDC} ({score_rating})")
+    # Tier
+    tier = result.get('loan_tier', 'N/A')
+    tier_emoji = print_tier_emoji(tier)
+    print(f"{tier_emoji} TIER: {tier}")
+    print(f"   {result.get('tier_reason', 'N/A')}\n")
     
-    # Loan Limit
-    limit = data['loan_limit_vnd']
-    print(f"\n{Colors.BOLD}Maximum Loan Limit:{Colors.ENDC}")
-    if data['approved']:
-        print(f"  {Colors.OKGREEN}{format_currency(limit)}{Colors.ENDC}")
+    # Approval status
+    if result.get('approved'):
+        print(f"LOAN APPROVED!")
+        
+        # Loan details
+        loan_amount = result.get('loan_amount_vnd', 0)
+        print(f"💵 Maximum Loan Amount:")
+        print(f"   {format_currency(loan_amount)}")
+        print(f"   ({loan_amount:,.0f} VND)\n")
+        
+        monthly_payment = result.get('monthly_payment_vnd', 0)
+        print(f"Monthly Payment:")
+        print(f"   {format_currency(monthly_payment)}")
+        print(f"   ({monthly_payment:,.0f} VND/month)\n")
+        
+        loan_term = result.get('loan_term_months', 0)
+        print(f"Loan Term: {loan_term} months ({loan_term//12} years)")
+        
+        interest_rate = result.get('interest_rate', 0)
+        print(f"Interest Rate: {interest_rate}% per year\n")
+        
+        credit_score = result.get('credit_score', 0)
+        print(f"Credit Score: {credit_score}/850")
+        
+        risk_level = result.get('risk_level', 'N/A')
+        risk_color = Colors.OKGREEN if risk_level == "Low" else Colors.WARNING
+        print(f"Risk Level: {risk_level}\n")
+        
+        # Summary
+        print(f"💬 Message:")
+        print(f"   {result.get('approval_message', 'N/A')}")
+        
     else:
         print(f"  {Colors.FAIL}0 VND (Not Approved){Colors.ENDC}")
     
@@ -205,7 +235,7 @@ def run_demo():
     # Get customer input
     customer_data = get_customer_input()
     
-    print(f"\n{Colors.OKCYAN}Processing...{Colors.ENDC}\n")
+    print("\n🔄 Processing...")
     
     # STEP 1: Calculate Loan Limit
     try:
@@ -220,59 +250,99 @@ def run_demo():
             return
         
     except requests.exceptions.RequestException as e:
-        print(f"{Colors.FAIL}Error in Step 1: {e}{Colors.ENDC}")
-        return
+        print(f"Error connecting to API: {e}")
+        print(f"\nMake sure the API is running at {API_URL}")
+
+def show_comparison():
+    """Show same customer, different purposes"""
+    print_header()
+    print("📊 COMPARISON DEMO - Same Customer, Different Purposes\n")
     
-    # Ask user for loan amount
-    print(f"\n{Colors.HEADER}{'=' * 70}{Colors.ENDC}")
-    max_limit = step1_data['loan_limit_vnd']
-    print(f"\n{Colors.BOLD}How much do you want to borrow?{Colors.ENDC}")
-    print(f"Maximum: {Colors.OKGREEN}{format_currency(max_limit)}{Colors.ENDC}")
+    base_customer = {
+        "full_name": "Demo Customer - Premium Profile",
+        "age": 35,
+        "monthly_income": 25000000,
+        "employment_status": "EMPLOYED",
+        "years_employed": 8.0,
+        "home_ownership": "MORTGAGE",
+        "years_credit_history": 10,
+        "has_previous_defaults": False,
+        "currently_defaulting": False
+    }
     
-    loan_amount_input = input(f"\nEnter amount (VND) or press Enter for max: ").strip()
-    if loan_amount_input:
-        loan_amount = float(loan_amount_input)
-        if loan_amount > max_limit:
-            print(f"{Colors.WARNING}Amount exceeds limit. Using maximum: {format_currency(max_limit)}{Colors.ENDC}")
-            loan_amount = max_limit
-    else:
-        loan_amount = max_limit
+    purposes = ["PERSONAL", "EDUCATION", "CAR", "HOME"]
     
-    # STEP 2: Calculate Loan Terms
-    try:
-        step2_request = {
-            "loan_amount": loan_amount,
-            "loan_purpose": customer_data['loan_purpose'],
-            "credit_score": step1_data['credit_score']
-        }
+    print("Customer Profile:")
+    print(f"  Age: {base_customer['age']}")
+    print(f"  Monthly Income: {format_currency(base_customer['monthly_income'])}")
+    print(f"  Employment: {base_customer['years_employed']} years")
+    print(f"  Home: {base_customer['home_ownership']}\n")
+    
+    print("=" * 70)
+    
+    for purpose in purposes:
+        customer_data = {**base_customer, "loan_purpose": purpose}
         
-        response = requests.post(CALCULATE_TERMS_URL, json=step2_request)
-        response.raise_for_status()
-        step2_data = response.json()
-        
-        display_step2_result(step2_data, loan_amount)
-        
-    except requests.exceptions.RequestException as e:
-        print(f"{Colors.FAIL}Error in Step 2: {e}{Colors.ENDC}")
-        return
+        try:
+            response = requests.post(API_URL, json=customer_data, timeout=10)
+            response.raise_for_status()
+            result = response.json()
+            
+            tier_emoji = print_tier_emoji(result.get('loan_tier', ''))
+            tier = result.get('loan_tier', 'N/A')
+            loan_amount = result.get('loan_amount_vnd', 0)
+            term = result.get('loan_term_months', 0)
+            
+            print(f"\n{purpose}")
+            print(f"  {tier_emoji} Tier: {tier}")
+            print(f"  💵 Max Loan: {format_currency(loan_amount)}")
+            print(f"  ⏱️  Term: {term} months ({term//12} years)")
+            
+        except Exception as e:
+            print(f"Error: {e}")
     
-    # Summary
-    print(f"\n{Colors.HEADER}{'=' * 70}{Colors.ENDC}")
-    print(f"{Colors.OKGREEN}Application Complete!{Colors.ENDC}")
-    print(f"{Colors.HEADER}{'=' * 70}{Colors.ENDC}\n")
+    print("\n" + "=" * 70 + "\n")
+    input(f"Press Enter to continue...")
 
 def main():
-    """Main function"""
-    try:
-        run_demo()
+    """Main menu"""
+    while True:
+        print_header()
+        print("Select Demo Mode:\n")
+        print("  1. Quick Demo (4 pre-defined scenarios)")
+        print("  2. Custom Input (enter your own data)")
+        print("  3. Comparison Demo (same customer, different purposes)")
+        print("  4. Exit\n")
         
-        print(f"\n{Colors.OKCYAN}Press Enter to exit...{Colors.ENDC}")
-        input()
+        choice = input("Your choice (1-4): ").strip()
         
-    except KeyboardInterrupt:
-        print(f"\n\n{Colors.WARNING}Demo cancelled by user{Colors.ENDC}")
-    except Exception as e:
-        print(f"\n{Colors.FAIL}Unexpected error: {e}{Colors.ENDC}")
+        if choice == "1":
+            run_quick_demo()
+            input(f"\nPress Enter to return to menu...")
+        elif choice == "2":
+            run_custom_demo()
+            input(f"\nPress Enter to return to menu...")
+        elif choice == "3":
+            show_comparison()
+        elif choice == "4":
+            print(f"\nThank you for using the demo! 👋\n")
+            break
+        else:
+            print("Invalid choice. Please try again.")
+            input("Press Enter to continue...")
 
 if __name__ == "__main__":
-    main()
+    print(f"\n⚠️ Make sure the API is running first!")
+    print(f"Run: docker-compose up -d\n")
+    
+    try:
+        # Test connection
+        response = requests.get("http://localhost:8000/api/health", timeout=5)
+        print(f"✅ API is running!\n")
+        input("Press Enter to start demo...")
+        main()
+    except:
+        print(f"❌ Cannot connect to API at {API_URL}")
+        print(f"\nPlease start the API first:")
+        print("  cd credit-scoring-api")
+        print("  docker-compose up -d\n")

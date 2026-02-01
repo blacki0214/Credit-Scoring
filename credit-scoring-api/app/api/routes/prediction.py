@@ -54,7 +54,7 @@ async def calculate_loan_limit(application: SimpleLoanRequest):
     - message: Explanation
     """
     try:
-        logger.info(f"Loan limit calculation for: {application.full_name}")
+        logger.info(f"📊 Loan limit calculation for: {application.full_name}")
         
         # Convert simple request to internal format and calculate credit score
         internal_request = request_converter.convert_simple_to_prediction(application)
@@ -160,7 +160,7 @@ async def calculate_loan_terms(request: LoanTermsRequest):
     """
     try:
         logger.info(
-            f"Loan terms calculation - Amount: {request.loan_amount:,.0f} VND, "
+            f"💰 Loan terms calculation - Amount: {request.loan_amount:,.0f} VND, "
             f"Purpose: {request.loan_purpose}, Credit score: {request.credit_score}"
         )
         
@@ -320,7 +320,7 @@ async def get_loan_offer(request: PredictionRequest):
     **Note:** Exchange rate: 1 USD = 25,000 VND (approximate)
     """
     try:
-        logger.info(f"Loan offer request - Age: {request.person_age}, Income: {request.person_income}, Loan: {request.loan_amnt}")
+        logger.info(f"💰 Loan offer request - Age: {request.person_age}, Income: {request.person_income}, Loan: {request.loan_amnt}")
         
         # Get risk prediction first
         prediction_result = prediction_service.predict(request)
@@ -518,7 +518,7 @@ async def calculate_credit_score(application: SimpleLoanRequest):
     - Credit score tracking
     """
     try:
-        logger.info(f"Credit score calculation for: {application.full_name}")
+        logger.info(f"📊 Credit score calculation for: {application.full_name}")
         
         # For credit score calculation, use a standard 3-year personal loan as reference
         reference_loan_amount = application.monthly_income * 12 * 2  # 2x annual income

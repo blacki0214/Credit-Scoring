@@ -15,7 +15,7 @@ API_BASE_URL = "http://localhost:8000"
 def print_response(title: str, response: requests.Response):
     """Print formatted API response"""
     print(f"\n{'='*60}")
-    print(f" {title}")
+    print(f"🔍 {title}")
     print(f"{'='*60}")
     print(f"Status Code: {response.status_code}")
     print(f"Response:")
@@ -201,7 +201,7 @@ def test_loan_offer_rejected():
 def main():
     """Run all tests"""
     print("\n" + "="*60)
-    print(" CREDIT SCORING API TEST SUITE")
+    print("🧪 CREDIT SCORING API TEST SUITE")
     print("="*60)
     print(f"Testing API at: {API_BASE_URL}")
     
@@ -225,24 +225,24 @@ def main():
             result = test_func()
             results.append((test_name, result))
         except requests.exceptions.ConnectionError:
-            print(f"\n Connection Error: Cannot connect to {API_BASE_URL}")
+            print(f"\n❌ Connection Error: Cannot connect to {API_BASE_URL}")
             print("Make sure the API is running with:")
             print("  docker-compose up")
             return
         except Exception as e:
-            print(f"\n Error in {test_name}: {str(e)}")
+            print(f"\n❌ Error in {test_name}: {str(e)}")
             results.append((test_name, False))
     
     # Summary
     print("\n" + "="*60)
-    print(" TEST SUMMARY")
+    print("📊 TEST SUMMARY")
     print("="*60)
     
     passed = sum(1 for _, result in results if result)
     total = len(results)
     
     for test_name, result in results:
-        status = " PASS" if result else " FAIL"
+        status = "✅ PASS" if result else "❌ FAIL"
         print(f"{status} - {test_name}")
     
     print(f"\n{'='*60}")
@@ -250,9 +250,9 @@ def main():
     print("="*60)
     
     if passed == total:
-        print(" All tests passed! API is working correctly.")
+        print("🎉 All tests passed! API is working correctly.")
     else:
-        print("  Some tests failed. Check the output above for details.")
+        print("⚠️  Some tests failed. Check the output above for details.")
 
 
 if __name__ == "__main__":
