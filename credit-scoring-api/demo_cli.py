@@ -180,7 +180,7 @@ def display_step1_result(data: Dict[str, Any]):
         "Medium": Colors.WARNING,
         "High": Colors.FAIL,
         "Very High": Colors.FAIL
-    }   
+    }
     print(f"\n{Colors.BOLD}Risk Level:{Colors.ENDC}")
     print(f"  {risk_colors.get(risk, Colors.ENDC)}{risk}{Colors.ENDC}")
     
