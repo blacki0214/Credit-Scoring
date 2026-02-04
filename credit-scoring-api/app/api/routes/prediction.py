@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Request, Depends
 from app.models.schemas import (
     PredictionRequest, PredictionResponse, LoanOfferResponse, 
     SimpleLoanRequest, CreditScoreResponse,
@@ -11,6 +11,8 @@ from app.services.request_converter import request_converter
 from app.services.feature_engineering import FeatureEngineer
 from app.services.loan_limit_calculator import loan_limit_calculator  # NEW
 from app.services.loan_terms_calculator import loan_terms_calculator  # NEW
+from app.core.security import verify_api_key  # NEW: API authentication
+from app.core.config import settings  # NEW: Rate limit settings
 import logging
 from typing import List
 
@@ -18,9 +20,20 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
+# Import limiter from main app
+from slowapi import Limiter
+from app.core.security import get_client_ip
+
+limiter = Limiter(key_func=get_client_ip)
+
 
 @router.post("/calculate-limit", response_model=LoanLimitResponse, status_code=status.HTTP_200_OK)
-async def calculate_loan_limit(application: SimpleLoanRequest):
+@limiter.limit(f"{settings.RATE_LIMIT_CALCULATE_LIMIT}/minute")
+async def calculate_loan_limit(
+    request: Request,
+    application: SimpleLoanRequest,
+    api_key: str = Depends(verify_api_key)
+):
     """
     Calculate Loan Limit Endpoint (Step 1)
     
@@ -127,7 +140,12 @@ async def calculate_loan_limit(application: SimpleLoanRequest):
 
 
 @router.post("/calculate-terms", response_model=LoanTermsResponse, status_code=status.HTTP_200_OK)
-async def calculate_loan_terms(request: LoanTermsRequest):
+@limiter.limit(f"{settings.RATE_LIMIT_CALCULATE_TERMS}/minute")
+async def calculate_loan_terms(
+    request: Request,
+    loan_terms_request: LoanTermsRequest,
+    api_key: str = Depends(verify_api_key)
+):
     """
     Calculate Loan Terms Endpoint (Step 2)
     
@@ -160,15 +178,15 @@ async def calculate_loan_terms(request: LoanTermsRequest):
     """
     try:
         logger.info(
-            f"Loan terms calculation - Amount: {request.loan_amount:,.0f} VND, "
-            f"Purpose: {request.loan_purpose}, Credit score: {request.credit_score}"
+            f"Loan terms calculation - Amount: {loan_terms_request.loan_amount:,.0f} VND, "
+            f"Purpose: {loan_terms_request.loan_purpose}, Credit score: {loan_terms_request.credit_score}"
         )
         
         # Calculate loan terms
         loan_terms = loan_terms_calculator.calculate_loan_terms(
-            loan_amount=request.loan_amount,
-            loan_purpose=request.loan_purpose,
-            credit_score=request.credit_score
+            loan_amount=loan_terms_request.loan_amount,
+            loan_purpose=loan_terms_request.loan_purpose,
+            credit_score=loan_terms_request.credit_score
         )
         
         logger.info(
@@ -178,8 +196,8 @@ async def calculate_loan_terms(request: LoanTermsRequest):
         )
         
         return LoanTermsResponse(
-            loan_amount_vnd=request.loan_amount,
-            loan_purpose=request.loan_purpose,
+            loan_amount_vnd=loan_terms_request.loan_amount,
+            loan_purpose=loan_terms_request.loan_purpose,
             interest_rate=loan_terms["interest_rate"],
             loan_term_months=loan_terms["loan_term_months"],
             monthly_payment_vnd=loan_terms["monthly_payment_vnd"],
@@ -246,7 +264,12 @@ async def predict_loan(request: PredictionRequest):
 
 
 @router.post("/batch-predict", status_code=status.HTTP_200_OK)
-async def batch_predict(requests: List[PredictionRequest]):
+@limiter.limit(f"{settings.RATE_LIMIT_BATCH}/minute")
+async def batch_predict(
+    request: Request,
+    prediction_requests: List[PredictionRequest],
+    api_key: str = Depends(verify_api_key)
+):
     """
     Batch Prediction Endpoint
     
@@ -257,22 +280,31 @@ async def batch_predict(requests: List[PredictionRequest]):
     - count: Number of predictions made
     """
     try:
-        logger.info(f"Batch prediction request for {len(requests)} applications")
+        logger.info(f"Batch prediction request - {len(prediction_requests)} applications")
         
-        results = []
-        for request in requests:
-            result = prediction_service.predict(request)
-            results.append(result)
+        # Process all predictions
+        predictions = []
+        for pred_request in prediction_requests:
+            result = prediction_service.predict(pred_request)
+            predictions.append(result)
         
-        logger.info(f"Batch prediction complete: {len(results)} results")
+        # Calculate summary statistics
+        high_risk_count = sum(1 for p in predictions if p.risk_level == "HIGH")
+        medium_risk_count = sum(1 for p in predictions if p.risk_level == "MEDIUM")
+        low_risk_count = sum(1 for p in predictions if p.risk_level == "LOW")
+        
+        logger.info(
+            f"Batch prediction complete - High: {high_risk_count}, "
+            f"Medium: {medium_risk_count}, Low: {low_risk_count}"
+        )
         
         return {
-            "predictions": results, 
-            "count": len(results),
+            "predictions": predictions,
+            "count": len(predictions),
             "summary": {
-                "high_risk": sum(1 for r in results if r.risk_level in ["High", "Very High"]),
-                "medium_risk": sum(1 for r in results if r.risk_level == "Medium"),
-                "low_risk": sum(1 for r in results if r.risk_level == "Low")
+                "high_risk": high_risk_count,
+                "medium_risk": medium_risk_count,
+                "low_risk": low_risk_count
             }
         }
         
@@ -345,7 +377,12 @@ async def get_loan_offer(request: PredictionRequest):
 
 
 @router.post("/batch-loan-offers", status_code=status.HTTP_200_OK)
-async def batch_loan_offers(requests: List[PredictionRequest]):
+@limiter.limit(f"{settings.RATE_LIMIT_BATCH}/minute")
+async def batch_loan_offers(
+    request: Request,
+    prediction_requests: List[PredictionRequest],
+    api_key: str = Depends(verify_api_key)
+):
     """
     Batch Loan Offers Endpoint (VND Currency)
     
@@ -357,19 +394,12 @@ async def batch_loan_offers(requests: List[PredictionRequest]):
     - summary: Statistics of approvals and rejections
     """
     try:
-        logger.info(f"Batch loan offer request for {len(requests)} applications")
+        logger.info(f"Batch loan offers request - {len(prediction_requests)} applications")
         
+        # Process all loan offers
         offers = []
-        for req in requests:
-            # Get prediction
-            prediction_result = prediction_service.predict(req)
-            
-            # Calculate offer
-            offer = loan_offer_service.calculate_offer(
-                request=req,
-                probability=prediction_result.probability,
-                risk_level=prediction_result.risk_level
-            )
+        for pred_request in prediction_requests:
+            offer = loan_offer_service.generate_offer(pred_request.model_dump())
             offers.append(offer)
         
         logger.info(f"Batch loan offers complete: {len(offers)} results")
@@ -399,7 +429,12 @@ async def batch_loan_offers(requests: List[PredictionRequest]):
 
 
 @router.post("/apply", response_model=LoanOfferResponse, status_code=status.HTTP_200_OK)
-async def apply_for_loan(application: SimpleLoanRequest):
+@limiter.limit(f"{settings.RATE_LIMIT_APPLY}/minute")
+async def apply_for_loan(
+    request: Request,
+    application: SimpleLoanRequest,
+    api_key: str = Depends(verify_api_key)
+):
     """
     Smart Loan Recommendation Endpoint
     
@@ -485,7 +520,12 @@ async def apply_for_loan(application: SimpleLoanRequest):
 
 
 @router.post("/credit-score", response_model=CreditScoreResponse, status_code=status.HTTP_200_OK)
-async def calculate_credit_score(application: SimpleLoanRequest):
+@limiter.limit(f"{settings.RATE_LIMIT_CALCULATE_LIMIT}/minute")
+async def calculate_credit_score(
+    request: Request,
+    application: SimpleLoanRequest,
+    api_key: str = Depends(verify_api_key)
+):
     """
     Credit Score Calculator Endpoint (For Dashboard)
     
