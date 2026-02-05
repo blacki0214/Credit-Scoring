@@ -39,7 +39,7 @@ class Settings(BaseSettings):
     
     @property
     def XGB_MODEL_PATH(self) -> Path:
-        model_path = os.getenv("XGB_MODEL_PATH", "../output/models/xgboost_final.pkl")
+        model_path = os.getenv("XGB_MODEL_PATH", "models/xgboost_final.pkl")
         if Path(model_path).is_absolute():
             return Path(model_path)
         return self.BASE_DIR / model_path
