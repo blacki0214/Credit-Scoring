@@ -441,9 +441,8 @@ async def apply_for_loan(
     Get personalized loan recommendation based on your profile.
     The system automatically:
     1. Calculates your credit score
-    2. Determines your loan tier (PLATINUM/GOLD/SILVER/BRONZE)
-    3. Recommends maximum loan amount you qualify for
-    4. Assesses risk and sets interest rate
+    2. Recommends maximum loan amount you qualify for
+    3. Assesses risk and sets interest rate
     
     *NO NEED to specify loan amount* - the system calculates the maximum you can safely borrow!
     
@@ -468,15 +467,7 @@ async def apply_for_loan(
     - loan_term_months: Loan term in months
     - credit_score: Your calculated credit score
     - risk_level: Risk assessment
-    - loan_tier: Your tier (PLATINUM/GOLD/SILVER/BRONZE)
-    - tier_reason: Why you were assigned this tier
     - approval_message: Detailed approval/rejection message
-    
-    *Loan Tiers:*
-    - PLATINUM: Best rates, highest amounts (4.5x+ annual income)
-    - GOLD: Great rates, high amounts (3.5x annual income)
-    - SILVER: Good rates, moderate amounts (2.5x annual income)
-    - BRONZE: Standard rates, conservative amounts (1.5x annual income)
     """
     try:
         logger.info(f"Smart loan application from: {application.full_name}, Purpose: {application.loan_purpose}")
