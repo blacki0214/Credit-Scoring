@@ -9,6 +9,7 @@ pandas>=2.0.3
 scikit-learn==1.7.2
 lightgbm==4.1.0
 python-dotenv==1.0.0
+slowapi==0.1.9
 pytest==7.4.3
 pytest-asyncio==0.21.1
 httpx==0.25.1

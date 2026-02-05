@@ -31,9 +31,9 @@ try:
     response = requests.get(f"{API_URL}/api/health")
     print(f"   Status: {response.status_code}")
     print(f"   Response: {response.json()}")
-    print("   ✅ PASS: Public endpoint works without API key")
+    print("   PASS: Public endpoint works without API key")
 except Exception as e:
-    print(f"   ❌ FAIL: {e}")
+    print(f"   FAIL: {e}")
 
 # Test 2: Protected endpoint without API key (should fail with 401)
 print("\n2. Testing protected endpoint /api/calculate-limit WITHOUT API key...")
@@ -45,12 +45,12 @@ try:
     print(f"   Status: {response.status_code}")
     if response.status_code == 401:
         print(f"   Response: {response.json()}")
-        print("   ✅ PASS: Correctly rejected request without API key")
+        print("   PASS: Correctly rejected request without API key")
     else:
         print(f"   Response: {response.json()}")
-        print("   ❌ FAIL: Should have returned 401 Unauthorized")
+        print("   FAIL: Should have returned 401 Unauthorized")
 except Exception as e:
-    print(f"   ❌ FAIL: {e}")
+    print(f"   FAIL: {e}")
 
 # Test 3: Protected endpoint with INVALID API key (should fail with 401)
 print("\n3. Testing protected endpoint /api/calculate-limit WITH INVALID API key...")
@@ -67,12 +67,12 @@ try:
     print(f"   Status: {response.status_code}")
     if response.status_code == 401:
         print(f"   Response: {response.json()}")
-        print("   ✅ PASS: Correctly rejected request with invalid API key")
+        print("   PASS: Correctly rejected request with invalid API key")
     else:
         print(f"   Response: {response.json()}")
-        print("   ❌ FAIL: Should have returned 401 Unauthorized")
+        print("   FAIL: Should have returned 401 Unauthorized")
 except Exception as e:
-    print(f"   ❌ FAIL: {e}")
+    print(f"   FAIL: {e}")
 
 # Test 4: Protected endpoint with VALID API key (should succeed)
 print("\n4. Testing protected endpoint /api/calculate-limit WITH VALID API key...")
@@ -92,12 +92,12 @@ try:
         print(f"   Credit Score: {data['credit_score']}")
         print(f"   Loan Limit: {data['loan_limit_vnd']:,.0f} VND")
         print(f"   Approved: {data['approved']}")
-        print("   ✅ PASS: Successfully authenticated with valid API key")
+        print("   PASS: Successfully authenticated with valid API key")
     else:
         print(f"   Response: {response.json()}")
-        print("   ❌ FAIL: Should have returned 200 OK")
+        print("   FAIL: Should have returned 200 OK")
 except Exception as e:
-    print(f"   ❌ FAIL: {e}")
+    print(f"   FAIL: {e}")
 
 # Test 5: Rate limiting (should fail after 10 requests)
 print("\n5. Testing rate limiting (10 requests/minute limit)...")
@@ -119,29 +119,29 @@ for i in range(12):  # Try 12 requests (limit is 10)
         
         if response.status_code == 200:
             success_count += 1
-            print(f"   Request {i+1}: ✅ Success")
+            print(f"   Request {i+1}: Success")
         elif response.status_code == 429:  # Too Many Requests
             rate_limited = True
-            print(f"   Request {i+1}: ⚠️  Rate limited (429)")
+            print(f"   Request {i+1}: Rate limited (429)")
             print(f"   Response: {response.text}")
             break
         else:
-            print(f"   Request {i+1}: ❌ Unexpected status {response.status_code}")
+            print(f"   Request {i+1}: Unexpected status {response.status_code}")
     except Exception as e:
-        print(f"   Request {i+1}: ❌ Error: {e}")
+        print(f"   Request {i+1}: Error: {e}")
     
     time.sleep(0.1)  # Small delay between requests
 
 if rate_limited:
-    print(f"\n   ✅ PASS: Rate limiting works! {success_count} requests succeeded, then got rate limited")
+    print(f"\n   PASS: Rate limiting works! {success_count} requests succeeded, then got rate limited")
 else:
-    print(f"\n   ⚠️  WARNING: Made {success_count} requests without hitting rate limit")
+    print(f"\n   WARNING: Made {success_count} requests without hitting rate limit")
 
 print("\n" + "=" * 80)
 print("TEST SUMMARY")
 print("=" * 80)
-print("✅ All critical security features are working!")
+print("All critical security features are working!")
 print("   - API key authentication: ENABLED")
 print("   - Rate limiting: ENABLED")
-print("\n💡 Remember to keep your API_KEY secret and never commit .env to git!")
+print("\nRemember to keep your API_KEY secret and never commit .env to git!")
 print("=" * 80)
