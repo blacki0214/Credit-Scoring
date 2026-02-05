@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, status, Request, Depends
 from app.models.schemas import (
     PredictionRequest, PredictionResponse, LoanOfferResponse, 
-    SimpleLoanRequest, CreditScoreResponse,
+    SimpleLoanRequest, CreditScoreResponse, SimpleLoanApplicationResponse,
     LoanLimitResponse, LoanTermsRequest, LoanTermsResponse  # NEW SCHEMAS
 )
 from app.services.prediction_service import prediction_service
@@ -428,7 +428,7 @@ async def batch_loan_offers(
         )
 
 
-@router.post("/apply", response_model=LoanOfferResponse, status_code=status.HTTP_200_OK)
+@router.post("/apply", response_model=SimpleLoanApplicationResponse, status_code=status.HTTP_200_OK)
 @limiter.limit(f"{settings.RATE_LIMIT_APPLY}/minute")
 async def apply_for_loan(
     request: Request,
@@ -436,15 +436,11 @@ async def apply_for_loan(
     api_key: str = Depends(verify_api_key)
 ):
     """
-    Smart Loan Recommendation Endpoint
+    Loan Application Endpoint - Get Credit Score and Loan Limit
     
-    Get personalized loan recommendation based on your profile.
-    The system automatically:
-    1. Calculates your credit score
-    2. Recommends maximum loan amount you qualify for
-    3. Assesses risk and sets interest rate
-    
-    *NO NEED to specify loan amount* - the system calculates the maximum you can safely borrow!
+    Submit your loan application to get:
+    1. Your credit score (300-850)
+    2. Maximum loan amount you qualify for
     
     *Request Body:*
     - full_name: Customer's full name
@@ -459,18 +455,11 @@ async def apply_for_loan(
     - currently_defaulting: Are you currently in default? (true/false)
     
     *Returns:*
-    - approved: Whether you qualify for a loan (true/false)
-    - loan_amount_vnd: Maximum recommended loan amount in VND
-    - max_amount_vnd: Maximum eligible amount in VND
-    - interest_rate: Annual interest rate (%)
-    - monthly_payment_vnd: Estimated monthly payment in VND
-    - loan_term_months: Loan term in months
-    - credit_score: Your calculated credit score
-    - risk_level: Risk assessment
-    - approval_message: Detailed approval/rejection message
+    - credit_score: Your calculated credit score (300-850)
+    - loan_limit_vnd: Maximum loan amount in VND
     """
     try:
-        logger.info(f"Smart loan application from: {application.full_name}, Purpose: {application.loan_purpose}")
+        logger.info(f"Loan application from: {application.full_name}, Purpose: {application.loan_purpose}")
         
         # Convert simple request to full internal format
         internal_request = request_converter.convert_simple_to_prediction(application)
@@ -494,19 +483,24 @@ async def apply_for_loan(
             credit_score=internal_request.credit_score
         )
         
-        logger.info(
-            f"Application processed: Tier={offer['loan_tier']}, "
-            f"Approved={offer['approved']}, Amount={offer['loan_amount_vnd']:,.0f} VND, "
-            f"Score={offer['credit_score']}"
+        # Return only credit score and loan limit
+        response = SimpleLoanApplicationResponse(
+            credit_score=offer['credit_score'],
+            loan_limit_vnd=offer['max_amount_vnd']
         )
         
-        return offer
+        logger.info(
+            f"Application processed: Score={response.credit_score}, "
+            f"Limit={response.loan_limit_vnd:,.0f} VND"
+        )
+        
+        return response
         
     except Exception as e:
-        logger.error(f"Smart loan application error: {e}")
+        logger.error(f"Loan application error: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Smart loan recommendation failed: {str(e)}"
+            detail=f"Loan application failed: {str(e)}"
         )
 
 

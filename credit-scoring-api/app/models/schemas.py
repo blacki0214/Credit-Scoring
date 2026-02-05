@@ -172,6 +172,21 @@ class LoanOfferResponse(BaseModel):
         }
 
 
+class SimpleLoanApplicationResponse(BaseModel):
+    """Simplified response for /api/apply - only credit score and loan limit"""
+    
+    credit_score: int = Field(..., description="Customer's credit score (300-850)")
+    loan_limit_vnd: float = Field(..., description="Maximum loan amount customer qualifies for in VND")
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "credit_score": 750,
+                "loan_limit_vnd": 420000000
+            }
+        }
+
+
 class LoanLimitResponse(BaseModel):
     """Response for /api/calculate-limit endpoint (Step 1)"""
     
