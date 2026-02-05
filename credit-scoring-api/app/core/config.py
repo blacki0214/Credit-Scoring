@@ -38,6 +38,13 @@ class Settings(BaseSettings):
         return self.BASE_DIR / "models"
     
     @property
+    def XGB_MODEL_PATH(self) -> Path:
+        model_path = os.getenv("XGB_MODEL_PATH", "../output/models/xgboost_final.pkl")
+        if Path(model_path).is_absolute():
+            return Path(model_path)
+        return self.BASE_DIR / model_path
+    
+    @property
     def LGBM_MODEL_PATH(self) -> Path:
         model_path = os.getenv("LGBM_MODEL_PATH", "models/lgb_model_optimized.pkl")
         if Path(model_path).is_absolute():
@@ -53,6 +60,11 @@ class Settings(BaseSettings):
     
     # Logging
     LOG_LEVEL: str = "INFO"
+    
+    # Model Settings
+    USE_XGBOOST: bool = True  # Set to False to use LightGBM
+    XGBOOST_THRESHOLD: float = 0.86  # Optimized threshold for XGBoost
+    LIGHTGBM_THRESHOLD: float = 0.12  # Optimized threshold for LightGBM
     
     # Rate Limiting
     RATE_LIMIT_CALCULATE_LIMIT: int = 10  # requests per minute

@@ -23,15 +23,21 @@ class PredictionService:
             # Apply feature engineering
             processed_data = self.feature_engineer.transform(input_data)
             
-            # Make prediction
-            prediction = model_loader.lgbm_model.predict(processed_data)[0]
-            probability = model_loader.lgbm_model.predict_proba(processed_data)[0][1]
+            # Get active model and threshold
+            model = model_loader.get_active_model()
+            threshold = model_loader.get_threshold()
+            
+            # Make prediction with probability
+            probability = model.predict_proba(processed_data)[0][1]
+            
+            # Apply optimized threshold
+            prediction = 1 if probability >= threshold else 0
             
             # Determine risk level
             risk_level = self._get_risk_level(probability)
             
             # Calculate confidence (distance from decision boundary)
-            confidence = abs(probability - 0.5) * 2
+            confidence = abs(probability - threshold) / max(threshold, 1 - threshold)
             
             return PredictionResponse(
                 prediction=int(prediction),

@@ -12,37 +12,45 @@ async def get_model_info():
     Returns model metadata and performance metrics
     """
     try:
+        from app.core.config import settings
         metadata = model_loader.metadata
         
+        # Determine which model is active
+        model_name = "XGBoost" if settings.USE_XGBOOST else "LightGBM"
+        model_key = "xgboost" if settings.USE_XGBOOST else "lightgbm"
+        
         if not metadata:
+            active_model = model_loader.get_active_model()
             return {
-                "model_name": "LightGBM",
+                "model_name": model_name,
                 "version": "1.0",
-                "features_count": len(model_loader.lgbm_model.feature_name_),
+                "features_count": len(active_model.feature_names_in_) if hasattr(active_model, 'feature_names_in_') else 64,
                 "status": "loaded"
             }
         
-        lgbm_info = metadata.get('models', {}).get('lightgbm', {})
+        model_info = metadata.get('models', {}).get(model_key, {})
         
         return {
-            "model_name": "LightGBM",
+            "model_name": model_name,
             "version": "1.0",
-            "features_count": len(model_loader.lgbm_model.feature_name_),
-            "threshold": float(lgbm_info.get('threshold', 0.5)),
+            "features_count": metadata.get('data_info', {}).get('n_features', 64) if settings.USE_XGBOOST else len(model_loader.lgbm_model.feature_name_),
+            "threshold": float(model_info.get('threshold', settings.XGBOOST_THRESHOLD if settings.USE_XGBOOST else settings.LIGHTGBM_THRESHOLD)),
             "performance": {
-                "roc_auc": float(lgbm_info.get('metrics', {}).get('roc_auc', 0)),
-                "f1": float(lgbm_info.get('metrics', {}).get('f1', 0)),
-                "precision": float(lgbm_info.get('metrics', {}).get('precision', 0)),
-                "recall": float(lgbm_info.get('metrics', {}).get('recall', 0)),
-                "balanced_accuracy": float(lgbm_info.get('metrics', {}).get('balanced_accuracy', 0))
+                "roc_auc": float(model_info.get('metrics', {}).get('roc_auc', 0)),
+                "f1": float(model_info.get('metrics', {}).get('f1', 0)),
+                "precision": float(model_info.get('metrics', {}).get('precision', 0)),
+                "recall": float(model_info.get('metrics', {}).get('recall', 0)),
+                "balanced_accuracy": float(model_info.get('metrics', {}).get('balanced_accuracy', 0))
             },
             "training_date": metadata.get('training_date', 'N/A')
         }
     except Exception as e:
+        from app.core.config import settings
+        active_model = model_loader.get_active_model()
         return {
             "error": str(e),
-            "model_name": "LightGBM",
-            "features_count": len(model_loader.lgbm_model.feature_name_) if model_loader.lgbm_model else 0
+            "model_name": "XGBoost" if settings.USE_XGBOOST else "LightGBM",
+            "features_count": len(active_model.feature_names_in_) if hasattr(active_model, 'feature_names_in_') else 64
         }
 
 
@@ -53,7 +61,9 @@ async def get_model_features():
     
     Returns list of all features used by the model
     """
+    active_model = model_loader.get_active_model()
+    feature_names = active_model.feature_names_in_ if hasattr(active_model, 'feature_names_in_') else model_loader.lgbm_model.feature_name_
     return {
-        "features": model_loader.lgbm_model.feature_name_,
-        "count": len(model_loader.lgbm_model.feature_name_)
+        "features": list(feature_names),
+        "count": len(feature_names)
     }
