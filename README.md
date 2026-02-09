@@ -502,12 +502,12 @@ docker-compose down
 **1. Environment Variables:**
 ```env
 API_VERSION=2.0.0
-MODEL_PATH=models/lgb_model_optimized.pkl
+MODEL_PATH=models/xgboost_final.pkl
 USE_XGBOOST=true
 ```
 
 **2. Deploy:**
-- **Render:** Connect GitHub repo → Auto-deploy ✨
+- **Render:** Connect GitHub repo → Auto-deploy
 - **Railway:** `railway up`
 - **Heroku:** `git push heroku main`
 
@@ -665,6 +665,6 @@ MIT License - Free to use for commercial and personal projects
 
 🇻🇳 Made in Vietnam
 
-[⬆ Back to Top](#-credit-scoring-api)
+[Back to Top](#-credit-scoring-api)
 
 </div>
