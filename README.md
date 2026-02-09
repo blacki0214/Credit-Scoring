@@ -6,7 +6,7 @@
 
 [![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
-[![LightGBM](https://img.shields.io/badge/LightGBM-ML-orange?style=for-the-badge)](https://lightgbm.readthedocs.io/)
+[![XGBoost](https://img.shields.io/badge/LightGBM-ML-orange?style=for-the-badge)](https://lightgbm.readthedocs.io/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
 
 [📚 Live API Docs](https://credit-scoring-h7mv.onrender.com/docs) • [🚀 Quick Start](#-quick-start) • [📖 Integration Guide](#-integration-guide)
