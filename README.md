@@ -50,7 +50,7 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload --port 8000
 ```
 
-**🌐 Open:** http://localhost:8000/docs
+**🌐 Open:** https://credit-scoring-y8mw.onrender.com/docs
 
 ---
 
@@ -64,7 +64,7 @@ uvicorn app.main:app --reload --port 8000
 <tr>
 <td width="50%" valign="top">
 
-### 1️⃣ Calculate Credit Score & Loan Limit
+### 1 Calculate Credit Score & Loan Limit
 
 🎯 **Endpoint:** `POST /api/calculate-limit`  
 ✨ **No loan purpose needed!**
@@ -89,7 +89,7 @@ uvicorn app.main:app --reload --port 8000
 </td>
 <td width="50%" valign="top">
 
-### 2️⃣ Calculate Loan Terms
+### 2️Calculate Loan Terms
 
 🎯 **Endpoint:** `POST /api/calculate-terms`  
 🎨 **After user selects purpose**
@@ -198,16 +198,16 @@ uvicorn app.main:app --reload --port 8000
 All prediction and calculation endpoints require **API Key authentication**.
 
 **Protected Endpoints:**
-- ✅ `/api/calculate-limit` - Requires API key
-- ✅ `/api/calculate-terms` - Requires API key
-- ✅ `/api/apply` - Requires API key
-- ✅ `/api/credit-score` - Requires API key
-- ✅ `/api/batch-predict` - Requires API key
+- `/api/calculate-limit` - Requires API key
+- `/api/calculate-terms` - Requires API key
+- `/api/apply` - Requires API key
+- `/api/credit-score` - Requires API key
+- `/api/batch-predict` - Requires API key
 
 **Public Endpoints:**
-- ❌ `/api/health` - No authentication needed
-- ❌ `/api/model/info` - No authentication needed
-- ❌ `/api/model/features` - No authentication needed
+- `/api/health` - No authentication needed
+- `/api/model/info` - No authentication needed
+- `/api/model/features` - No authentication needed
 
 ### How to Use API Key
 
@@ -409,8 +409,8 @@ response = requests.post(f"{API_URL}/api/calculate-limit", headers=headers, json
 })
 
 limit_data = response.json()
-print(f"✅ Credit Score: {limit_data['credit_score']}")
-print(f"💰 Max Loan: {limit_data['loan_limit_vnd']:,} VND")
+print(f"Credit Score: {limit_data['credit_score']}")
+print(f"Max Loan: {limit_data['loan_limit_vnd']:,} VND")
 
 # Step 2: Get loan terms (after user selects purpose)
 response = requests.post(f"{API_URL}/api/calculate-terms", headers=headers, json={
@@ -420,9 +420,9 @@ response = requests.post(f"{API_URL}/api/calculate-terms", headers=headers, json
 })
 
 terms = response.json()
-print(f"📊 Interest Rate: {terms['interest_rate']}%")
-print(f"💵 Monthly Payment: {terms['monthly_payment_vnd']:,} VND")
-print(f"💸 Total Payment: {terms['total_payment_vnd']:,} VND")
+print(f"Interest Rate: {terms['interest_rate']}%")
+print(f"Monthly Payment: {terms['monthly_payment_vnd']:,} VND")
+print(f"Total Payment: {terms['total_payment_vnd']:,} VND")
 ```
 
 ---
@@ -454,8 +454,8 @@ const limitResponse = await fetch(`${API_URL}/api/calculate-limit`, {
 });
 
 const limitData = await limitResponse.json();
-console.log(`✅ Credit Score: ${limitData.credit_score}`);
-console.log(`💰 Max Loan: ${limitData.loan_limit_vnd.toLocaleString()} VND`);
+console.log(`Credit Score: ${limitData.credit_score}`);
+console.log(`Max Loan: ${limitData.loan_limit_vnd.toLocaleString()} VND`);
 
 // Step 2: Get loan terms (after user selects purpose)
 const termsResponse = await fetch(`${API_URL}/api/calculate-terms`, {
@@ -472,8 +472,8 @@ const termsResponse = await fetch(`${API_URL}/api/calculate-terms`, {
 });
 
 const terms = await termsResponse.json();
-console.log(`📊 Interest Rate: ${terms.interest_rate}%`);
-console.log(`💵 Monthly Payment: ${terms.monthly_payment_vnd.toLocaleString()} VND`);
+console.log(`Interest Rate: ${terms.interest_rate}%`);
+console.log(`Monthly Payment: ${terms.monthly_payment_vnd.toLocaleString()} VND`);
 ```
 
 ---
@@ -520,7 +520,7 @@ USE_XGBOOST=true
 ### Interactive API Documentation
 
 - 🏠 **Local:** http://localhost:8000/docs
-- 🌐 **Live:** https://credit-scoring-h7mv.onrender.com/docs
+- 🌐 **Live:** https://credit-scoring-y8mw.onrender.com/docs
 
 ### Test Cases
 
