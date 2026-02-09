@@ -6,10 +6,10 @@
 
 [![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
-[![XGBoost](https://img.shields.io/badge/LightGBM-ML-orange?style=for-the-badge)](https://lightgbm.readthedocs.io/)
+[![XGBoost](https://img.shields.io/badge/XGBoost-ML-orange?style=for-the-badge)](https://lightgbm.readthedocs.io/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
 
-[📚 Live API Docs](https://credit-scoring-h7mv.onrender.com/docs) • [🚀 Quick Start](#-quick-start) • [📖 Integration Guide](#-integration-guide)
+[📚 Live API Docs](https://credit-scoring-y8mw.onrender.com/docs) • [🚀 Quick Start](#-quick-start) • [📖 Integration Guide](#-integration-guide)
 
 </div>
 
@@ -17,10 +17,10 @@
 
 ## ✨ Features
 
-- 🤖 **AI-Powered** - LightGBM model trained on 300K+ real loan applications
+- 🤖 **AI-Powered** - XGBoost model trained on 300K+ real loan applications
 - ⚡ **Fast** - Sub-100ms response time
 - 🎯 **Accurate** - 72% ROC-AUC score
-- 🔒 **Secure** - API key authentication & rate limiting
+- 🔒 **Secure** - API key authentication, rate limiting & CORS protection
 - 📱 **Mobile-Ready** - Two-step flow optimized for mobile apps
 - 🌍 **Production-Ready** - Docker support, health checks, monitoring
 
@@ -132,12 +132,112 @@ POST /api/calculate-terms
 
 ### 🛠️ Utility Endpoints
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/health` | GET | 🏥 Health check |
-| `/api/model/info` | GET | 📊 ML model details |
-| `/api/model/features` | GET | 📋 Feature list (64 features) |
-| `/api/credit-score` | POST | 💯 Calculate credit score only |
+| Endpoint | Method | Auth Required | Description |
+|----------|--------|---------------|-------------|
+| `/api/health` | GET | ❌ No | 🏥 Health check |
+| `/api/model/info` | GET | ❌ No | 📊 ML model details |
+| `/api/model/features` | GET | ❌ No | 📋 Feature list (64 features) |
+| `/api/credit-score` | POST | ✅ Yes | 💯 Calculate credit score only |
+
+---
+
+## 🔒 API Security
+
+### Authentication
+
+All prediction and calculation endpoints require **API Key authentication**.
+
+**Protected Endpoints:**
+- ✅ `/api/calculate-limit` - Requires API key
+- ✅ `/api/calculate-terms` - Requires API key
+- ✅ `/api/apply` - Requires API key
+- ✅ `/api/credit-score` - Requires API key
+- ✅ `/api/batch-predict` - Requires API key
+
+**Public Endpoints:**
+- ❌ `/api/health` - No authentication needed
+- ❌ `/api/model/info` - No authentication needed
+- ❌ `/api/model/features` - No authentication needed
+
+### How to Use API Key
+
+**Python:**
+```python
+import requests
+
+headers = {
+    "X-API-Key": "your-api-key-here",
+    "Content-Type": "application/json"
+}
+
+response = requests.post(
+    "https://credit-scoring-y8mw.onrender.com/api/calculate-limit",
+    headers=headers,
+    json={...}
+)
+```
+
+**JavaScript:**
+```javascript
+const response = await fetch('https://credit-scoring-y8mw.onrender.com/api/calculate-limit', {
+  method: 'POST',
+  headers: {
+    'X-API-Key': 'your-api-key-here',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({...})
+});
+```
+
+**cURL:**
+```bash
+curl -X POST "https://credit-scoring-y8mw.onrender.com/api/calculate-limit" \
+  -H "X-API-Key: your-api-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{...}'
+```
+
+### Rate Limiting
+
+To prevent abuse, the API implements rate limiting:
+
+| Endpoint | Rate Limit |
+|----------|------------|
+| `/api/calculate-limit` | 60 requests/minute |
+| `/api/calculate-terms` | 60 requests/minute |
+| `/api/apply` | 30 requests/minute |
+| `/api/batch-predict` | 10 requests/minute |
+
+**Rate Limit Headers:**
+```
+X-RateLimit-Limit: 60
+X-RateLimit-Remaining: 59
+X-RateLimit-Reset: 1234567890
+```
+
+### CORS (Cross-Origin Resource Sharing)
+
+The API supports CORS for web applications:
+- **Allowed Origins:** Configurable (contact admin to whitelist your domain)
+- **Allowed Methods:** GET, POST, PUT, DELETE, OPTIONS
+- **Allowed Headers:** All standard headers
+- **Credentials:** Supported
+
+### Error Responses
+
+**401 Unauthorized** - Missing or invalid API key:
+```json
+{
+  "detail": "Invalid API key"
+}
+```
+
+**429 Too Many Requests** - Rate limit exceeded:
+```json
+{
+  "detail": "Rate limit exceeded. Try again in 60 seconds."
+}
+```
 
 ---
 
@@ -237,10 +337,16 @@ CAR loan (base 7.5%) + Credit score 750 (-1.0%) = 6.5% final rate 🎯
 ```python
 import requests
 
-API_URL = "http://localhost:8000"
+API_URL = "https://credit-scoring-y8mw.onrender.com"
+API_KEY = "your-api-key-here"  # Get from admin
+
+headers = {
+    "X-API-Key": API_KEY,
+    "Content-Type": "application/json"
+}
 
 # Step 1: Get credit score and loan limit
-response = requests.post(f"{API_URL}/api/calculate-limit", json={
+response = requests.post(f"{API_URL}/api/calculate-limit", headers=headers, json={
     "full_name": "Nguyen Van A",
     "age": 30,
     "monthly_income": 20000000,
@@ -257,7 +363,7 @@ print(f"✅ Credit Score: {limit_data['credit_score']}")
 print(f"💰 Max Loan: {limit_data['loan_limit_vnd']:,} VND")
 
 # Step 2: Get loan terms (after user selects purpose)
-response = requests.post(f"{API_URL}/api/calculate-terms", json={
+response = requests.post(f"{API_URL}/api/calculate-terms", headers=headers, json={
     "loan_amount": 300000000,
     "loan_purpose": "CAR",
     "credit_score": limit_data['credit_score']
@@ -274,12 +380,16 @@ print(f"💸 Total Payment: {terms['total_payment_vnd']:,} VND")
 ### 🟨 JavaScript/TypeScript Example
 
 ```javascript
-const API_URL = 'http://localhost:8000';
+const API_URL = 'https://credit-scoring-y8mw.onrender.com';
+const API_KEY = 'your-api-key-here';  // Get from admin
 
 // Step 1: Get credit score and loan limit
 const limitResponse = await fetch(`${API_URL}/api/calculate-limit`, {
   method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
+  headers: { 
+    'X-API-Key': API_KEY,
+    'Content-Type': 'application/json' 
+  },
   body: JSON.stringify({
     full_name: "Nguyen Van A",
     age: 30,
@@ -300,7 +410,10 @@ console.log(`💰 Max Loan: ${limitData.loan_limit_vnd.toLocaleString()} VND`);
 // Step 2: Get loan terms (after user selects purpose)
 const termsResponse = await fetch(`${API_URL}/api/calculate-terms`, {
   method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
+  headers: { 
+    'X-API-Key': API_KEY,
+    'Content-Type': 'application/json' 
+  },
   body: JSON.stringify({
     loan_amount: 300000000,
     loan_purpose: "CAR",
@@ -382,13 +495,13 @@ python test_api.py
 | Component | Technology |
 |-----------|------------|
 | 🌐 Framework | FastAPI (Python 3.10+) |
-| 🤖 ML Model | LightGBM / XGBoost |
+| 🤖 ML Model | **XGBoost v2.0** |
 | 📊 Accuracy | 72% ROC-AUC |
 | 📚 Training Data | 300,000+ loan applications |
 | 🔧 Features | 64 auto-engineered features |
 | ⚡ Response Time | <100ms average |
 | 🐳 Containerization | Docker + Docker Compose |
-| 🔒 Security | API Key + Rate Limiting |
+| 🔒 Security | API Key + Rate Limiting + CORS |
 
 ---
 
@@ -415,8 +528,8 @@ credit-scoring-api/
 │   │   └── security.py         # Authentication
 │   └── 📄 main.py              # FastAPI app
 ├── 📂 models/                  # ML models
-│   ├── lgb_model_optimized.pkl
-│   └── xgboost_final.pkl
+│   ├── lgb_model_optimized.pkl (Backup)
+│   └── xgboost_final.pkl       (Active - v2.0)
 ├── 📂 tests/                   # Test files
 ├── 🐳 Dockerfile
 ├── 🐳 docker-compose.yml
@@ -468,9 +581,9 @@ uvicorn app.main:app --port 8001
 
 ```bash
 # Check model file exists
-ls models/lgb_model_optimized.pkl
+ls models/xgboost_final.pkl
 
-# Check file size (should be ~14KB for LightGBM, ~1MB for XGBoost)
+# Check file size (should be ~1MB for XGBoost)
 ```
 
 ### Slow Response?
@@ -489,15 +602,16 @@ MIT License - Free to use for commercial and personal projects
 
 ## 💬 Support
 
-- 📚 **API Documentation:** https://credit-scoring-h7mv.onrender.com/docs
+- 📚 **API Documentation:** https://credit-scoring-y8mw.onrender.com/docs
 - 🐛 **Issues:** Create a GitHub issue
 - ❓ **Questions:** Check API docs first
+- 🔑 **API Key:** Contact admin for access
 
 ---
 
 <div align="center">
 
-**Built with ❤️ using FastAPI + LightGBM**
+**Built with ❤️ using FastAPI + XGBoost v2.0**
 
 🇻🇳 Made in Vietnam
 
