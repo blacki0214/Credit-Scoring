@@ -25,10 +25,10 @@ class SmartLoanOfferService:
         years_employed: float,
         employment_status: str,
         home_ownership: str,
-        loan_purpose: str,
-        annual_income_vnd: float,
-        monthly_income_vnd: float,
-        credit_score: int
+        loan_purpose: str = None,  # Now optional - only needed for interest rate calculation
+        annual_income_vnd: float = None,
+        monthly_income_vnd: float = None,
+        credit_score: int = None
     ) -> Dict[str, Any]:
         """
         Generate smart loan offer with automatic loan limit calculation.
@@ -37,7 +37,7 @@ class SmartLoanOfferService:
         1. Check minimum credit score
         2. Get ML model risk assessment
         3. Calculate maximum loan limit (based on credit score + risk)
-        4. Calculate loan terms (based on purpose)
+        4. Calculate loan terms (ONLY if loan_purpose is provided)
         5. Make approval decision
         6. Return personalized offer
         """
@@ -89,8 +89,8 @@ class SmartLoanOfferService:
         # Step 5: Determine approval
         approved = probability < self.approval_threshold
         
-        # Step 6: Calculate loan details if approved
-        if approved:
+        # Step 6: Calculate loan details if approved AND loan_purpose is provided
+        if approved and loan_purpose:
             # Calculate loan terms based on purpose
             loan_terms = loan_terms_calculator.calculate_loan_terms(
                 loan_amount=max_loan_amount,
@@ -112,6 +112,24 @@ class SmartLoanOfferService:
                 "interest_rate": loan_terms["interest_rate"],
                 "monthly_payment_vnd": loan_terms["monthly_payment_vnd"],
                 "loan_term_months": loan_terms["loan_term_months"],
+                "credit_score": credit_score,
+                "risk_level": risk_level,
+                "approval_message": approval_message
+            }
+        elif approved:
+            # Approved but no loan_purpose provided - return limit only
+            approval_message = (
+                f"Credit score: {credit_score}. Maximum loan limit: {max_loan_amount:,.0f} VND. "
+                f"Risk level: {risk_level}."
+            )
+            
+            return {
+                "approved": True,
+                "loan_amount_vnd": max_loan_amount,
+                "max_amount_vnd": max_loan_amount,
+                "interest_rate": None,
+                "monthly_payment_vnd": None,
+                "loan_term_months": None,
                 "credit_score": credit_score,
                 "risk_level": risk_level,
                 "approval_message": approval_message

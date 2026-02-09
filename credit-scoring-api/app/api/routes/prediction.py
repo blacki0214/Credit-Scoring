@@ -54,7 +54,6 @@ async def calculate_loan_limit(
     - employment_status: EMPLOYED, SELF_EMPLOYED, or UNEMPLOYED
     - years_employed: Years in current employment
     - home_ownership: RENT, OWN, MORTGAGE, or LIVING_WITH_PARENTS
-    - loan_purpose: Loan purpose (for reference only, not used in limit calculation)
     - years_credit_history: Years of credit history
     - has_previous_defaults: Ever defaulted?
     - currently_defaulting: Currently in default?
@@ -449,7 +448,6 @@ async def apply_for_loan(
     - employment_status: EMPLOYED, SELF_EMPLOYED, or UNEMPLOYED
     - years_employed: Years in current employment
     - home_ownership: RENT, OWN, MORTGAGE, or LIVING_WITH_PARENTS
-    - loan_purpose: HOME, CAR, BUSINESS, EDUCATION, MEDICAL, DEBT_CONSOLIDATION, HOME_IMPROVEMENT, or PERSONAL
     - years_credit_history: How many years have you had credit/loans? (0 if none)
     - has_previous_defaults: Have you ever defaulted on a loan? (true/false)
     - currently_defaulting: Are you currently in default? (true/false)
@@ -459,7 +457,7 @@ async def apply_for_loan(
     - loan_limit_vnd: Maximum loan amount in VND
     """
     try:
-        logger.info(f"Loan application from: {application.full_name}, Purpose: {application.loan_purpose}")
+        logger.info(f"Loan application from: {application.full_name}")
         
         # Convert simple request to full internal format
         internal_request = request_converter.convert_simple_to_prediction(application)
@@ -469,7 +467,7 @@ async def apply_for_loan(
         # Calculate annual income
         annual_income_vnd = application.monthly_income * 12
         
-        # Generate smart loan offer with tier-based calculation
+        # Generate smart loan offer (without loan_purpose - only credit score and limit)
         smart_service = SmartLoanOfferService()
         offer = smart_service.generate_offer(
             request_dict=internal_request.model_dump(),
@@ -477,7 +475,7 @@ async def apply_for_loan(
             years_employed=application.years_employed,
             employment_status=application.employment_status,
             home_ownership=application.home_ownership,
-            loan_purpose=application.loan_purpose,
+            loan_purpose=None,  # Not needed for credit score/limit calculation
             annual_income_vnd=annual_income_vnd,
             monthly_income_vnd=application.monthly_income,
             credit_score=internal_request.credit_score
@@ -524,7 +522,6 @@ async def calculate_credit_score(
     - employment_status: EMPLOYED, SELF_EMPLOYED, or UNEMPLOYED
     - years_employed: Years in current employment
     - home_ownership: RENT, OWN, MORTGAGE, or LIVING_WITH_PARENTS
-    - loan_purpose: Loan purpose (used for context only)
     - years_credit_history: How many years have you had credit/loans?
     - has_previous_defaults: Have you ever defaulted on a loan?
     - currently_defaulting: Are you currently in default?
