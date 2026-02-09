@@ -58,17 +58,66 @@ uvicorn app.main:app --reload --port 8000
 
 ### 🎯 Two-Step Flow (Recommended)
 
-> **Perfect for mobile apps** - Separate credit assessment from loan terms calculation
+> 📱 **Perfect for mobile apps** - Separate credit assessment from loan terms calculation
 
-#### **Step 1️⃣: Calculate Credit Score & Loan Limit**
+<table>
+<tr>
+<td width="50%" valign="top">
 
-**No loan purpose needed!** Just collect customer profile information.
+### 1️⃣ Calculate Credit Score & Loan Limit
 
-```http
-POST /api/calculate-limit
-```
+🎯 **Endpoint:** `POST /api/calculate-limit`  
+✨ **No loan purpose needed!**
 
-**📥 Request:**
+**📋 Input Fields:**
+- 👤 `full_name` - Name
+- 🎂 `age` - Age (18-100)
+- 💰 `monthly_income` - Income (VND)
+- 💼 `employment_status` - Job status
+- ⏱️ `years_employed` - Work years
+- 🏠 `home_ownership` - Housing
+- 📜 `years_credit_history` - Credit years
+- ⚠️ `has_previous_defaults` - Past defaults?
+- 🚫 `currently_defaulting` - Current defaults?
+
+**📊 Output:**
+- 💳 `credit_score` - Score (300-850)
+- 💵 `loan_limit_vnd` - Max loan
+- 🎯 `risk_level` - Risk level
+- ✅ `approved` - Approved?
+
+</td>
+<td width="50%" valign="top">
+
+### 2️⃣ Calculate Loan Terms
+
+🎯 **Endpoint:** `POST /api/calculate-terms`  
+🎨 **After user selects purpose**
+
+**📋 Input Fields:**
+- 💵 `loan_amount` - Desired amount
+- 🎯 `loan_purpose` - Purpose  
+  🏠 HOME | 🚗 CAR | 💼 BUSINESS  
+  🎓 EDUCATION | 💳 PERSONAL
+- 💳 `credit_score` - From Step 1
+
+**📊 Output:**
+- 📈 `interest_rate` - APR %
+- ⏰ `loan_term_months` - Duration
+- 💰 `monthly_payment_vnd` - Monthly
+- 💸 `total_payment_vnd` - Total cost
+- 🧮 `total_interest_vnd` - Interest
+- 📝 `rate_explanation` - Why this rate
+- 📅 `term_explanation` - Why this term
+
+</td>
+</tr>
+</table>
+
+---
+
+**📥 Example Request (Step 1):**
+
 ```json
 {
   "full_name": "Nguyen Van A",
@@ -83,28 +132,33 @@ POST /api/calculate-limit
 }
 ```
 
-**📤 Response:**
+**📤 Example Response (Step 1):**
+```json
+{
+  "full_name": "Nguyen Van A",
+  "age": 30,
+  "monthly_income": 20000000,
+  "employment_status": "EMPLOYED",
+  "years_employed": 5.0,
+  "home_ownership": "MORTGAGE",
+  "years_credit_history": 3,
+  "has_previous_defaults": false,
+  "currently_defaulting": false
+}
+```
+
 ```json
 {
   "credit_score": 750,
   "loan_limit_vnd": 420000000,
   "risk_level": "Low",
-  "approved": true,
-  "message": "Credit score: 750. Maximum loan: 420,000,000 VND"
+  "approved": true
 }
 ```
 
 ---
 
-#### **Step 2️⃣: Calculate Loan Terms**
-
-**After user selects loan purpose**, calculate interest rate and payment details.
-
-```http
-POST /api/calculate-terms
-```
-
-**📥 Request:**
+**📥 Example Request (Step 2):**
 ```json
 {
   "loan_amount": 300000000,
@@ -113,18 +167,14 @@ POST /api/calculate-terms
 }
 ```
 
-**📤 Response:**
+**📤 Example Response (Step 2):**
 ```json
 {
-  "loan_amount_vnd": 300000000,
-  "loan_purpose": "CAR",
   "interest_rate": 6.5,
   "loan_term_months": 60,
   "monthly_payment_vnd": 5869844,
   "total_payment_vnd": 352190668,
-  "total_interest_vnd": 52190668,
-  "rate_explanation": "Car loan - secured: base 7.5% + -1.0% (very good credit) = 6.5%",
-  "term_explanation": "60 months (5 years) - Car loan - secured by vehicle"
+  "total_interest_vnd": 52190668
 }
 ```
 
