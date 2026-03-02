@@ -2,17 +2,18 @@ from fastapi import APIRouter, HTTPException, status, Request, Depends
 from app.models.schemas import (
     PredictionRequest, PredictionResponse, LoanOfferResponse, 
     SimpleLoanRequest, CreditScoreResponse, SimpleLoanApplicationResponse,
-    LoanLimitResponse, LoanTermsRequest, LoanTermsResponse  # NEW SCHEMAS
+    LoanLimitResponse, LoanTermsRequest, LoanTermsResponse
 )
 from app.services.prediction_service import prediction_service
 from app.services.loan_offer_service import loan_offer_service
 from app.services.smart_loan_offer import SmartLoanOfferService
 from app.services.request_converter import request_converter
 from app.services.feature_engineering import FeatureEngineer
-from app.services.loan_limit_calculator import loan_limit_calculator  # NEW
-from app.services.loan_terms_calculator import loan_terms_calculator  # NEW
-from app.core.security import verify_api_key  # NEW: API authentication
-from app.core.config import settings  # NEW: Rate limit settings
+from app.services.loan_limit_calculator import loan_limit_calculator
+from app.services.loan_terms_calculator import loan_terms_calculator
+from app.services.score_mapper import probability_to_credit_score  # ML-derived credit score
+from app.core.security import verify_api_key
+from app.core.config import settings
 import logging
 from typing import List
 
@@ -68,16 +69,18 @@ async def calculate_loan_limit(
     try:
         logger.info(f"Loan limit calculation for: {application.full_name}")
         
-        # Convert simple request to internal format and calculate credit score
+        # Convert simple request to internal format
         internal_request = request_converter.convert_simple_to_prediction(application)
-        credit_score = internal_request.credit_score
         
         # Calculate annual income
         annual_income_vnd = application.monthly_income * 12
         
-        # Get ML model risk assessment
+        # Get ML model prediction (probability + risk level)
         prediction_result = prediction_service.predict(internal_request)
         risk_level = prediction_result.risk_level
+        
+        # Derive credit score from ML probability (replaces rule-based formula)
+        credit_score = probability_to_credit_score(prediction_result.probability)
         
         # Check minimum credit score
         min_credit_score = 600
