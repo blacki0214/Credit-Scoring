@@ -3,10 +3,12 @@ from firebase_admin import auth
 from fastapi import HTTPException, Security
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
-# Initialize once at startup — uses GCP Application Default Credentials on Cloud Run
-# No service account JSON needed when deployed; works locally with `gcloud auth application-default login`
+# Initialize once at startup — specify projectId so SDK knows which Firebase project
+# to verify tokens against. Uses GCP Application Default Credentials on Cloud Run.
 if not firebase_admin._apps:
-    firebase_admin.initialize_app()
+    firebase_admin.initialize_app(options={
+        'projectId': 'credit-scoring-22b28'
+    })
 
 security = HTTPBearer()
 
