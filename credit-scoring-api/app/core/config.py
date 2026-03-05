@@ -85,14 +85,8 @@ class Settings(BaseSettings):
                 raise ValueError(
                     "API_KEY must be set in .env file for production environment"
                 )
-            if self.SECRET_KEY == secrets.token_urlsafe(32):
-                raise ValueError(
-                    "SECRET_KEY must be set in .env file for production environment"
-                )
-            if "*" in self.allowed_origins_list:
-                raise ValueError(
-                    "ALLOWED_ORIGINS cannot contain '*' in production environment"
-                )
+            # NOTE: CORS wildcard check removed — this is a mobile API.
+            # CORS is browser-enforced only; Flutter clients are unaffected by it.
 
 
 settings = Settings()

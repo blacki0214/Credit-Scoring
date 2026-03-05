@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 env:
-  PROJECT_ID: your-project-id  # TODO: Replace with your GCP project ID
+  PROJECT_ID: creditscoring  # GCP project name
   SERVICE_NAME: credit-scoring-api
   REGION: asia-southeast1  # Singapore region (closest to Vietnam)
 

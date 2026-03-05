@@ -11,8 +11,9 @@ from app.services.request_converter import request_converter
 from app.services.feature_engineering import FeatureEngineer
 from app.services.loan_limit_calculator import loan_limit_calculator
 from app.services.loan_terms_calculator import loan_terms_calculator
-from app.services.score_mapper import probability_to_credit_score  # ML-derived credit score
+from app.services.score_mapper import probability_to_credit_score
 from app.core.security import verify_api_key
+from app.auth.firebase_auth import verify_firebase_token
 from app.core.config import settings
 import logging
 from typing import List
@@ -33,7 +34,7 @@ limiter = Limiter(key_func=get_client_ip)
 async def calculate_loan_limit(
     request: Request,
     application: SimpleLoanRequest,
-    api_key: str = Depends(verify_api_key)
+    user: dict = Depends(verify_firebase_token),
 ):
     """
     Calculate Loan Limit Endpoint (Step 1)
@@ -146,7 +147,7 @@ async def calculate_loan_limit(
 async def calculate_loan_terms(
     request: Request,
     loan_terms_request: LoanTermsRequest,
-    api_key: str = Depends(verify_api_key)
+    user: dict = Depends(verify_firebase_token),
 ):
     """
     Calculate Loan Terms Endpoint (Step 2)
@@ -435,7 +436,7 @@ async def batch_loan_offers(
 async def apply_for_loan(
     request: Request,
     application: SimpleLoanRequest,
-    api_key: str = Depends(verify_api_key)
+    user: dict = Depends(verify_firebase_token),
 ):
     """
     Loan Application Endpoint - Get Credit Score and Loan Limit
@@ -510,7 +511,7 @@ async def apply_for_loan(
 async def calculate_credit_score(
     request: Request,
     application: SimpleLoanRequest,
-    api_key: str = Depends(verify_api_key)
+    user: dict = Depends(verify_firebase_token),
 ):
     """
     Credit Score Calculator Endpoint (For Dashboard)

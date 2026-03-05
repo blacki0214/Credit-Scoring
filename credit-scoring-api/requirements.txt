@@ -16,6 +16,9 @@ xgboost==2.0.3
 python-dotenv==1.0.0
 slowapi==0.1.9
 
+# Firebase Admin SDK (token verification on Cloud Run)
+firebase-admin==6.5.0
+
 # Testing
 pytest==7.4.3
 pytest-asyncio==0.21.1

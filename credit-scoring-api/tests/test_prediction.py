@@ -2,6 +2,10 @@ import pytest
 from fastapi.testclient import TestClient
 from app.main import app
 from app.models.schemas import PredictionRequest
+from app.auth.firebase_auth import verify_firebase_token
+
+# Override Firebase token verification for all tests — no real token needed
+app.dependency_overrides[verify_firebase_token] = lambda: {"uid": "test-user", "email": "test@example.com"}
 
 client = TestClient(app)
 
