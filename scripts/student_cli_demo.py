@@ -77,70 +77,34 @@ raw_living = get_input("Living Status (family/dorm/rent)", str, "dorm", choices=
 data['living_status'] = living_map[raw_living]
 
 data['academic_year'] = get_input("Academic Year (1-4)", int, 2)
+data['maturity_score'] = get_input("Maturity Score (0.0 - 1.0)", float, 0.5)
 data['gpa_latest'] = get_input("Latest GPA (0.0 - 4.0)", float, 3.2)
 
 raw_income = get_input("Major Income Potential (low/medium/high)", str, "medium", choices=potential_map)
 data['major_income_potential'] = potential_map[raw_income]
 
 data['loan_amount'] = get_input("Loan Amount Requested (VND)", float, 25000000.0)
+data['debt_ratio'] = get_input("Debt Ratio (0.0 - 1.0)", float, 0.3)
+data['high_pressure_flag'] = get_input("High Pressure Flag (0 or 1)", int, 0, choices=[0, 1])
+data['behavior_risk_score'] = get_input("Behavior Risk Score (0.0 - 1.5)", float, 0.4)
+data['behavior_volatility'] = get_input("Behavior Volatility (0.0 - 1.0)", float, 0.2)
+data['severe_behavior_flag'] = get_input("Severe Behavior Flag (0 or 1)", int, 0, choices=[0, 1])
+data['support_numeric'] = get_input("Support Network Score (-1.0 to 1.0)", float, 0.0)
+data['has_buffer'] = get_input("Has Financial Buffer (0 or 1)", int, 1, choices=[0, 1])
+data['thin_support_flag'] = get_input("Thin Support Flag (0 or 1)", int, 0, choices=[0, 1])
 
-# --- ADVANCED / DERIVED FEATURES ---
-# Dynamically estimating advanced behavioral metrics based on sensible proxy heuristics
-print(colored("\n[Info] Auto-estimating advanced behavioral metrics based on profile...", "yellow"))
+# Some pre-calculated interaction features based on default inputs seen in EDA
+data['debt_x_behavior'] = get_input("Debt x Behavior Interaction", float, data['debt_ratio'] * data['behavior_risk_score'])
+data['debt_x_support'] = get_input("Debt x Support Interaction", float, data['debt_ratio'] * data['support_numeric'])
+data['debt_x_living'] = get_input("Debt x Living Interaction", float, data['debt_ratio'] * data['living_status'])
+data['behavior_under_pressure'] = get_input("Behavior Under Pressure", float, data['behavior_risk_score'] * (1 + data['high_pressure_flag']))
+data['shock_vulnerability'] = get_input("Shock Vulnerability Flag (0 or 1)", int, int((data['debt_ratio'] > 0.4) and (data['has_buffer'] == 0)), choices=[0, 1])
 
-# 1. Maturity Score (Proxy: Age and GPA)
-base_maturity = 0.5
-if data['age'] < 19:
-    base_maturity -= 0.2
-elif data['age'] > 22:
-    base_maturity += 0.2
-if data['gpa_latest'] > 3.0:
-    base_maturity += 0.1
-elif data['gpa_latest'] < 2.0:
-    base_maturity -= 0.2
-data['maturity_score'] = max(0.0, min(1.0, base_maturity))
-
-# 2. Debt Ratio (Proxy: Loan Amount vs Expected Income based on Potential)
-if raw_income == 'low':
-    expected_income = 80000000.0  # 80M VND
-elif raw_income == 'medium':
-    expected_income = 120000000.0 # 120M VND
-else:
-    expected_income = 200000000.0 # 200M VND
-data['debt_ratio'] = data['loan_amount'] / expected_income
-data['high_pressure_flag'] = 1 if data['debt_ratio'] > 0.5 else 0
-
-# 3. Behavior Risk Score & Volatility (Proxy: GPA, Program, Living Status)
-risk = 0.3
-if data['gpa_latest'] < 2.0:
-    risk += 0.4
-elif data['gpa_latest'] < 2.8:
-    risk += 0.1
-if raw_living == 'rent':
-    risk += 0.2
-data['behavior_risk_score'] = min(1.5, risk)
-data['severe_behavior_flag'] = 1 if risk > 0.6 else 0
-data['behavior_volatility'] = 0.5 if risk > 0.4 else 0.2
-
-# 4. Support System (Proxy: Living Status)
-if raw_living == 'family':
-    data['support_numeric'] = 0.8
-    data['has_buffer'] = 1
-elif raw_living == 'dorm':
-    data['support_numeric'] = 0.0
-    data['has_buffer'] = 0
-else:
-    data['support_numeric'] = -0.5
-    data['has_buffer'] = 1 if raw_income == 'high' else 0
-
-data['thin_support_flag'] = 1 if data['support_numeric'] < 0 else 0
-
-# 5. Pre-calculated interaction features
-data['debt_x_behavior'] = data['debt_ratio'] * data['behavior_risk_score']
-data['debt_x_support'] = data['debt_ratio'] * data['support_numeric']
-data['debt_x_living'] = data['debt_ratio'] * data['living_status']
-data['behavior_under_pressure'] = data['behavior_risk_score'] * (1 + data['high_pressure_flag'])
-data['shock_vulnerability'] = int((data['debt_ratio'] > 0.4) and (data['has_buffer'] == 0))
+# Newly Engineered Interaction Features
+data['financial_stress_index'] = get_input("Financial Stress Index", float, data['debt_ratio'] * data['behavior_volatility'])
+data['academic_resilience'] = get_input("Academic Resilience", float, data['gpa_latest'] * data['support_numeric'])
+data['risk_compounding'] = get_input("Risk Compounding (0-3)", int, data['severe_behavior_flag'] + data['thin_support_flag'] + data['high_pressure_flag'])
+data['loan_to_maturity_ratio'] = get_input("Loan to Maturity Ratio", float, data['loan_amount'] / (data['maturity_score'] + 0.1))
 
 # Build dataframe matching exactly the feature columns
 # Use a dictionary of lists to create a single-row DataFrame
