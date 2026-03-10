@@ -17,20 +17,20 @@ Formula:  credit_score = round(850 - probability * 550)
 """
 
 
+import math
+
 def probability_to_credit_score(probability: float) -> int:
     """
     Map default probability (0.0–1.0) → credit score (300–850).
 
-    Higher probability of default → lower credit score.
-    Linear interpolation across the 300–850 range.
-
-    Args:
-        probability: Model-predicted default probability (0.0 to 1.0)
-
-    Returns:
-        Credit score clamped to [300, 850]
+    Uses a square root function (non-linear) to stretch low probabilities 
+    into higher penalties to counter data imbalance from the US model.
+    Also applies a flat 30 point penalty for the VN market.
     """
-    raw = 850 - (probability * 550)
+    adjusted_prob = math.sqrt(probability)
+    base_penalty = 30
+    
+    raw = 850 - (adjusted_prob * 550) - base_penalty
     return int(round(max(300, min(850, raw))))
 
 

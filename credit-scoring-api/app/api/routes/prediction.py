@@ -80,8 +80,26 @@ async def calculate_loan_limit(
         prediction_result = prediction_service.predict(internal_request)
         risk_level = prediction_result.risk_level
         
-        # Derive credit score from ML probability (replaces rule-based formula)
+        # Derive credit score from ML probability (non-linear)
         credit_score = probability_to_credit_score(prediction_result.probability)
+        
+        # HARD CAPS (Business Rules)
+        # 1. Currently defaulting -> Auto reject, cap at 580 (Very Poor)
+        if application.currently_defaulting:
+            credit_score = min(credit_score, 580)
+            risk_level = "Very High"
+        # 2. Previous defaults -> Cap at 650 (Fair)
+        elif application.has_previous_defaults:
+            credit_score = min(credit_score, 650)
+        # 3. Young/Unemployed -> Cap at 680 (Fair)
+        elif application.age <= 22 or application.employment_status == "UNEMPLOYED":
+            credit_score = min(credit_score, 680)
+        # 4. New to credit -> Cap at 700 (Good)
+        elif application.years_credit_history == 0:
+            credit_score = min(credit_score, 700)
+        # 5. Low income (<10M) -> Cap at 720 (Good)
+        elif application.monthly_income < 10000000:
+            credit_score = min(credit_score, 720)
         
         # Check minimum credit score
         min_credit_score = 600
@@ -466,7 +484,27 @@ async def apply_for_loan(
         # Convert simple request to full internal format
         internal_request = request_converter.convert_simple_to_prediction(application)
         
-        logger.info(f"Calculated credit score: {internal_request.credit_score}")
+        # Get ML model prediction (probability + risk level)
+        prediction_result = prediction_service.predict(internal_request)
+        risk_level = prediction_result.risk_level
+        
+        # Get proper credit score
+        credit_score = probability_to_credit_score(prediction_result.probability)
+        
+        # EXACT SAME HARD CAPS AS /calculate-limit
+        if application.currently_defaulting:
+            credit_score = min(credit_score, 580)
+            risk_level = "Very High"
+        elif application.has_previous_defaults:
+            credit_score = min(credit_score, 650)
+        elif application.age <= 22 or application.employment_status == "UNEMPLOYED":
+            credit_score = min(credit_score, 680)
+        elif application.years_credit_history == 0:
+            credit_score = min(credit_score, 700)
+        elif application.monthly_income < 10000000:
+            credit_score = min(credit_score, 720)
+        
+        logger.info(f"Calculated credit score: {credit_score}")
         
         # Calculate annual income
         annual_income_vnd = application.monthly_income * 12
@@ -482,7 +520,7 @@ async def apply_for_loan(
             loan_purpose=None,  # Not needed for credit score/limit calculation
             annual_income_vnd=annual_income_vnd,
             monthly_income_vnd=application.monthly_income,
-            credit_score=internal_request.credit_score
+            credit_score=credit_score # Use the potentially capped credit score
         )
         
         # Return only credit score and loan limit
@@ -562,17 +600,30 @@ async def calculate_credit_score(
             reference_loan_amount
         )
         
-        # Convert to internal format to get loan grade
+        # ML Pipeline calculation
         internal_request = request_converter.convert_simple_to_prediction(application)
-        
-        # Get risk level from prediction
         prediction_result = prediction_service.predict(internal_request)
+        credit_score = probability_to_credit_score(prediction_result.probability)
+        risk_level = prediction_result.risk_level
+        
+        # EXACT SAME HARD CAPS AS /calculate-limit
+        if application.currently_defaulting:
+            credit_score = min(credit_score, 580)
+            risk_level = "Very High"
+        elif application.has_previous_defaults:
+            credit_score = min(credit_score, 650)
+        elif application.age <= 22 or application.employment_status == "UNEMPLOYED":
+            credit_score = min(credit_score, 680)
+        elif application.years_credit_history == 0:
+            credit_score = min(credit_score, 700)
+        elif application.monthly_income < 10000000:
+            credit_score = min(credit_score, 720)
         
         response = CreditScoreResponse(
             full_name=application.full_name,
-            credit_score=score_details["final_score"],
+            credit_score=credit_score, # Use the potentially capped credit score
             loan_grade=internal_request.loan_grade,
-            risk_level=prediction_result.risk_level,
+            risk_level=risk_level, # Use the potentially updated risk_level
             score_breakdown=score_details
         )
         
