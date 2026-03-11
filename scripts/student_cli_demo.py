@@ -117,7 +117,7 @@ proba = model.predict_proba(df_input)[0][1]
 
 print(colored("\n=======================================", "cyan"))
 print("Prediction Results:")
-if proba >= 0.5:
+if proba >= 0.4:
     print(colored(f"Risk Status: HIGH RISK (Likely Default)", "red", attrs=["bold"]))
 else:
     print(colored(f"Risk Status: LOW RISK (Approved)", "green", attrs=["bold"]))
