@@ -1,5 +1,4 @@
 import pandas as pd
-import numpy as np
 import pickle
 import os
 import sys
@@ -12,14 +11,24 @@ except ImportError:
         return text
 
 # Configure paths
-MODEL_PATH = os.path.join(os.path.dirname(__file__), '..', 'output', 'alternative_model', 'best_model_xgboost.pkl')
-FEATURE_COLS_PATH = os.path.join(os.path.dirname(__file__), '..', 'output', 'alternative_model', 'feature_cols.pkl')
+USER_MODEL_PATH = os.path.join(os.path.dirname(__file__), '..', 'output', 'alternative_model', 'best_model_user_friendly_xgboost.pkl')
+USER_FEATURE_COLS_PATH = os.path.join(os.path.dirname(__file__), '..', 'output', 'alternative_model', 'user_friendly_feature_cols.pkl')
+LEGACY_MODEL_PATH = os.path.join(os.path.dirname(__file__), '..', 'output', 'alternative_model', 'best_model_xgboost.pkl')
+LEGACY_FEATURE_COLS_PATH = os.path.join(os.path.dirname(__file__), '..', 'output', 'alternative_model', 'feature_cols.pkl')
 
 print(colored("=======================================", "cyan"))
 print(colored("   Student Loan Risk Prediction CLI    ", "cyan", attrs=["bold"]))
 print(colored("=======================================\n", "cyan"))
 
-if not os.path.exists(MODEL_PATH) or not os.path.exists(FEATURE_COLS_PATH):
+if os.path.exists(USER_MODEL_PATH) and os.path.exists(USER_FEATURE_COLS_PATH):
+    MODEL_PATH = USER_MODEL_PATH
+    FEATURE_COLS_PATH = USER_FEATURE_COLS_PATH
+    print(colored("Using production user-friendly model artifacts.", "green"))
+elif os.path.exists(LEGACY_MODEL_PATH) and os.path.exists(LEGACY_FEATURE_COLS_PATH):
+    MODEL_PATH = LEGACY_MODEL_PATH
+    FEATURE_COLS_PATH = LEGACY_FEATURE_COLS_PATH
+    print(colored("User-friendly model not found. Falling back to legacy model.", "yellow"))
+else:
     print(colored("Error: Model or feature list not found. Please train the model first.", "red"))
     sys.exit(1)
 
@@ -67,13 +76,6 @@ def get_input(prompt, cast_type=float, default=None, choices=None):
 
 print(colored("Please enter student applicant profile (Press ENTER to use defaults):\n", "green"))
 
-top_shap_features = [
-    'debt_x_behavior',
-    'financial_stress_index',
-    'debt_x_support',
-    'behavior_under_pressure'
-]
-
 print(colored("Required profile fields:", "cyan"))
 print("- Living Status")
 print("- Academic Year")
@@ -81,26 +83,11 @@ print("- Maturity Score")
 print("- Latest GPA")
 print("- Major Income Potential")
 print("- Loan Amount Requested")
-print(colored("\nTop 4 SHAP features (manual input):", "cyan"))
-for feat in top_shap_features:
-    print(f"- {feat}")
 print()
 
 data = {}
 
-# Keep stable defaults for non-requested base fields to make the CLI shorter.
-data['age'] = 20
-data['program_level'] = program_map['university']
-data['debt_ratio'] = 0.30
-data['high_pressure_flag'] = 0
-data['behavior_risk_score'] = 0.40
-data['behavior_volatility'] = 0.20
-data['severe_behavior_flag'] = 0
-data['support_numeric'] = 0.00
-data['has_buffer'] = 1
-data['thin_support_flag'] = 0
-
-# User-requested profile inputs.
+# User-requested profile inputs only.
 raw_living = get_input("Living Status (family/dorm/rent)", str, "dorm", choices=living_map)
 data['living_status'] = living_map[raw_living]
 data['academic_year'] = get_input("Academic Year (1-4)", int, 2)
@@ -111,18 +98,13 @@ raw_income = get_input("Major Income Potential (low/medium/high)", str, "medium"
 data['major_income_potential'] = potential_map[raw_income]
 data['loan_amount'] = get_input("Loan Amount Requested (VND)", float, 25000000.0)
 
-# User-requested top SHAP feature inputs.
-data['debt_x_behavior'] = get_input("debt_x_behavior", float, data['debt_ratio'] * data['behavior_risk_score'])
-data['financial_stress_index'] = get_input("financial_stress_index", float, data['debt_ratio'] * data['behavior_volatility'])
-data['debt_x_support'] = get_input("debt_x_support", float, data['debt_ratio'] * data['support_numeric'])
-data['behavior_under_pressure'] = get_input("behavior_under_pressure", float, data['behavior_risk_score'] * (1 + data['high_pressure_flag']))
-
-# Auto-fill remaining engineered features for model completeness.
-data['debt_x_living'] = data['debt_ratio'] * data['living_status']
-data['shock_vulnerability'] = int((data['debt_ratio'] > 0.4) and (data['has_buffer'] == 0))
-data['academic_resilience'] = data['gpa_latest'] * data['support_numeric']
-data['risk_compounding'] = data['severe_behavior_flag'] + data['thin_support_flag'] + data['high_pressure_flag']
+# Auto-engineer features used by the production-friendly retrained model.
 data['loan_to_maturity_ratio'] = data['loan_amount'] / (data['maturity_score'] + 0.1)
+data['academic_maturity'] = data['academic_year'] * data['maturity_score']
+data['gpa_x_maturity'] = data['gpa_latest'] * data['maturity_score']
+data['gpa_gap_from_4'] = 4.0 - data['gpa_latest']
+data['living_x_income_potential'] = data['living_status'] * data['major_income_potential']
+data['loan_x_income_potential'] = data['loan_amount'] * data['major_income_potential']
 
 # Build dataframe matching exactly the feature columns
 # Use a dictionary of lists to create a single-row DataFrame
