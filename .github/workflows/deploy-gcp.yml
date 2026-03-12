@@ -75,9 +75,40 @@ jobs:
         run: |
           cd credit-scoring-api
           # Build and push with commit SHA tag
-          gcloud builds submit \
+          BUILD_ID=$(gcloud builds submit \
             --tag ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.SERVICE_NAME }}:${{ github.sha }} \
-            --timeout=20m
+            --timeout=20m \
+            --format="value(id)" \
+            --suppress-logs 2>&1 || echo "")
+          
+          # Wait a moment for build to initialize
+          sleep 5
+          
+          # Check build status
+          if [ -n "$BUILD_ID" ]; then
+            echo "Build ID: $BUILD_ID"
+            for i in {1..60}; do
+              STATUS=$(gcloud builds describe $BUILD_ID --format="value(status)" 2>/dev/null || echo "UNKNOWN")
+              echo "Build status: $STATUS"
+              if [ "$STATUS" = "SUCCESS" ]; then
+                echo "Build completed successfully!"
+                break
+              elif [ "$STATUS" = "FAILURE" ] || [ "$STATUS" = "TIMEOUT" ] || [ "$STATUS" = "CANCELLED" ]; then
+                echo "Build failed with status: $STATUS"
+                exit 1
+              fi
+              sleep 10
+            done
+          else
+            echo "Could not get build ID, checking recent builds..."
+            RECENT_STATUS=$(gcloud builds list --limit=1 --format="value(status)")
+            if [ "$RECENT_STATUS" = "SUCCESS" ]; then
+              echo "Most recent build succeeded!"
+            else
+              echo "Build may have failed. Status: $RECENT_STATUS"
+              exit 1
+            fi
+          fi
           
           # Tag as latest
           gcloud artifacts docker tags add \
