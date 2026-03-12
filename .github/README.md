@@ -2,44 +2,57 @@
 
 This directory contains GitHub Actions workflows and setup scripts for automated deployment to Google Cloud Platform.
 
+## � Authentication Method
+
+We use **Workload Identity Federation** for secure authentication to Google Cloud Platform. This is more secure than using service account keys because:
+- ✅ No long-lived credentials stored in GitHub
+- ✅ Automatic token rotation
+- ✅ Fine-grained access control
+- ✅ GCP organization policy compliant (no service account keys)
+
 ## 🚀 Quick Setup (First Time Only)
 
-### Step 1: Create Service Account
+### Step 1: Run Workload Identity Setup
 
 **Windows (PowerShell):**
 ```powershell
-cd .github
-.\setup-github-actions-sa.ps1
+.\setup-workload-identity.ps1
 ```
 
-**Linux/Mac:**
+This script will:
+- Create Workload Identity Pool
+- Create GitHub Actions provider
+- Grant permissions to service account
+- Display the values you need for GitHub secrets
+
+### Step 2: Add Three Secrets to GitHub
+
+Go to your GitHub repo: **Settings → Secrets and variables → Actions**
+
+Add these three secrets (values provided by the setup script):
+
+#### 1. `GCP_PROJECT_ID`
+```
+project-71e73ad8-4a84-471e-b69
+```
+
+#### 2. `GCP_SERVICE_ACCOUNT`
+```
+github-actions-cicd@project-71e73ad8-4a84-471e-b69.iam.gserviceaccount.com
+```
+
+#### 3. `GCP_WORKLOAD_IDENTITY_PROVIDER`
+```
+projects/976448868286/locations/global/workloadIdentityPools/github-actions-pool/providers/github-provider
+```
+
+### Step 3: Test the Workflow
+
+Push code to trigger deployment:
 ```bash
-cd .github
-chmod +x setup-github-actions-sa.sh
-./setup-github-actions-sa.sh
-```
-
-### Step 2: Add Secret to GitHub
-
-1. The script creates `github-actions-key.json`
-2. Copy the entire JSON content:
-   ```powershell
-   Get-Content github-actions-key.json | Set-Clipboard  # Windows
-   cat github-actions-key.json | pbcopy  # macOS
-   ```
-3. Go to your GitHub repo: **Settings → Secrets and variables → Actions**
-4. Click **New repository secret**
-5. Name: `GCP_SA_KEY`
-6. Value: Paste the JSON content
-7. Click **Add secret**
-
-### Step 3: Delete the Key File
-
-⚠️ **Important:** Delete the key file after adding to GitHub!
-
-```powershell
-Remove-Item github-actions-key.json  # Windows
-rm github-actions-key.json  # Linux/Mac
+git add .
+git commit -m "Test CI/CD deployment"
+git push origin main
 ```
 
 ---

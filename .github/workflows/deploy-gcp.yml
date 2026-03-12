@@ -1,11 +1,15 @@
 name: Deploy to Google Cloud Run
 
-# Required GitHub Secret: GCP_SA_KEY
-# Service Account must have these roles:
+# Required GitHub Secrets (using Workload Identity Federation - no keys needed!):
+# - GCP_PROJECT_ID: project-71e73ad8-4a84-471e-b69
+# - GCP_SERVICE_ACCOUNT: github-actions-cicd@project-71e73ad8-4a84-471e-b69.iam.gserviceaccount.com
+# - GCP_WORKLOAD_IDENTITY_PROVIDER: projects/976448868286/locations/global/workloadIdentityPools/github-actions-pool/providers/github-provider
+#
+# Service Account has these roles:
 # - roles/run.admin (Cloud Run Admin)
 # - roles/artifactregistry.writer (Artifact Registry Writer)
 # - roles/iam.serviceAccountUser (Service Account User)
-# - roles/cloudbuild.builds.editor (Cloud Build Editor)
+# - roles/storage.objectAdmin (Storage Object Admin)
 
 on:
   push:
@@ -25,14 +29,19 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     
+    permissions:
+      contents: read
+      id-token: write  # Required for Workload Identity Federation
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
       
-      - name: Authenticate with Google Cloud
+      - name: Authenticate with Google Cloud using Workload Identity
         uses: google-github-actions/auth@v2
         with:
-          credentials_json: ${{ secrets.GCP_SA_KEY }}
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
       
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
