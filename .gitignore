@@ -5,6 +5,9 @@ data/installments_payments.csv
 *.csv
 .venv
 *.parquet
-*.pkl
 credit-scoring-api/.env
 .agent
+
+# Exclude documentation markdown files
+app/*.md
+.github/skills/**/*.md
