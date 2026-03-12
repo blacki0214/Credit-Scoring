@@ -1,5 +1,12 @@
 name: Deploy to Google Cloud Run
 
+# Required GitHub Secret: GCP_SA_KEY
+# Service Account must have these roles:
+# - roles/run.admin (Cloud Run Admin)
+# - roles/artifactregistry.writer (Artifact Registry Writer)
+# - roles/iam.serviceAccountUser (Service Account User)
+# - roles/cloudbuild.builds.editor (Cloud Build Editor)
+
 on:
   push:
     branches:
@@ -22,37 +29,51 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       
-      - name: Setup Google Cloud CLI
-        uses: google-github-actions/setup-gcloud@v2
+      - name: Authenticate with Google Cloud
+        uses: google-github-actions/auth@v2
         with:
-          service_account_key: ${{ secrets.GCP_SA_KEY }}
-          project_id: ${{ env.PROJECT_ID }}
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+      
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
       
       - name: Configure Docker for Artifact Registry
         run: |
-          gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev
+          gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
+      
+      - name: Enable Required APIs
+        run: |
+          gcloud services enable artifactregistry.googleapis.com --project=${{ env.PROJECT_ID }}
+          gcloud services enable run.googleapis.com --project=${{ env.PROJECT_ID }}
+          gcloud services enable cloudbuild.googleapis.com --project=${{ env.PROJECT_ID }}
+        continue-on-error: true
       
       - name: Create Artifact Registry Repository (if not exists)
         run: |
-          gcloud artifacts repositories describe ${{ env.REPOSITORY }} \
-            --location=${{ env.REGION }} || \
-          gcloud artifacts repositories create ${{ env.REPOSITORY }} \
-            --repository-format=docker \
-            --location=${{ env.REGION }} \
-            --description="Docker repository for Credit Scoring API"
-        continue-on-error: true
+          # Check if repository exists
+          if ! gcloud artifacts repositories describe ${{ env.REPOSITORY }} \
+            --location=${{ env.REGION }} &>/dev/null; then
+            echo "Creating Artifact Registry repository..."
+            gcloud artifacts repositories create ${{ env.REPOSITORY }} \
+              --repository-format=docker \
+              --location=${{ env.REGION }} \
+              --description="Docker repository for Credit Scoring API"
+          else
+            echo "Repository already exists"
+          fi
       
-      - name: Build Docker Image
+      - name: Build and Push Docker Image with Cloud Build
         run: |
           cd credit-scoring-api
-          docker build -t ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.SERVICE_NAME }}:${{ github.sha }} .
-          docker tag ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.SERVICE_NAME }}:${{ github.sha }} \
-                     ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.SERVICE_NAME }}:latest
-      
-      - name: Push Docker Image to Artifact Registry
-        run: |
-          docker push ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.SERVICE_NAME }}:${{ github.sha }}
-          docker push ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.SERVICE_NAME }}:latest
+          # Build and push with commit SHA tag
+          gcloud builds submit \
+            --tag ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.SERVICE_NAME }}:${{ github.sha }} \
+            --timeout=20m
+          
+          # Tag as latest
+          gcloud artifacts docker tags add \
+            ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.SERVICE_NAME }}:${{ github.sha }} \
+            ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.SERVICE_NAME }}:latest
       
       - name: Deploy to Cloud Run
         run: |
