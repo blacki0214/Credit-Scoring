@@ -74,40 +74,55 @@ jobs:
       - name: Build and Push Docker Image with Cloud Build
         run: |
           cd credit-scoring-api
-          # Build and push with commit SHA tag
-          BUILD_ID=$(gcloud builds submit \
+          echo "Starting Cloud Build..."
+          
+          # Submit build asynchronously to avoid log streaming issues
+          gcloud builds submit \
             --tag ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.SERVICE_NAME }}:${{ github.sha }} \
             --timeout=20m \
-            --format="value(id)" \
-            --suppress-logs 2>&1 || echo "")
+            --async \
+            --format="value(id)" > build_id.txt || true
           
-          # Wait a moment for build to initialize
-          sleep 5
+          BUILD_ID=$(cat build_id.txt | head -n 1 | tr -d '\n' | tr -d '\r')
+          echo "Build ID: $BUILD_ID"
           
-          # Check build status
-          if [ -n "$BUILD_ID" ]; then
-            echo "Build ID: $BUILD_ID"
-            for i in {1..60}; do
-              STATUS=$(gcloud builds describe $BUILD_ID --format="value(status)" 2>/dev/null || echo "UNKNOWN")
-              echo "Build status: $STATUS"
-              if [ "$STATUS" = "SUCCESS" ]; then
-                echo "Build completed successfully!"
-                break
-              elif [ "$STATUS" = "FAILURE" ] || [ "$STATUS" = "TIMEOUT" ] || [ "$STATUS" = "CANCELLED" ]; then
-                echo "Build failed with status: $STATUS"
-                exit 1
-              fi
-              sleep 10
-            done
-          else
-            echo "Could not get build ID, checking recent builds..."
-            RECENT_STATUS=$(gcloud builds list --limit=1 --format="value(status)")
-            if [ "$RECENT_STATUS" = "SUCCESS" ]; then
-              echo "Most recent build succeeded!"
-            else
-              echo "Build may have failed. Status: $RECENT_STATUS"
+          # Wait for build to complete (check every 15 seconds for 20 minutes)
+          echo "Waiting for build to complete..."
+          for i in {1..80}; do
+            sleep 15
+            
+            # Get the most recent build status
+            LATEST_BUILD=$(gcloud builds list --limit=1 --format="json" 2>/dev/null)
+            STATUS=$(echo "$LATEST_BUILD" | grep -o '"status": "[^"]*"' | head -1 | cut -d'"' -f4)
+            BUILD_TIME=$(echo "$LATEST_BUILD" | grep -o '"createTime": "[^"]*"' | head -1 | cut -d'"' -f4)
+            
+            echo "[$i] Build status: $STATUS (Created: $BUILD_TIME)"
+            
+            if [ "$STATUS" = "SUCCESS" ]; then
+              echo "✓ Build completed successfully!"
+              break
+            elif [ "$STATUS" = "FAILURE" ]; then
+              echo "✗ Build failed!"
+              exit 1
+            elif [ "$STATUS" = "TIMEOUT" ]; then
+              echo "✗ Build timed out!"
+              exit 1
+            elif [ "$STATUS" = "CANCELLED" ]; then
+              echo "✗ Build was cancelled!"
               exit 1
             fi
+            
+            # Show progress
+            if [ $((i % 4)) -eq 0 ]; then
+              echo "Build still in progress... ($((i * 15)) seconds elapsed)"
+            fi
+          done
+          
+          # Final check
+          FINAL_STATUS=$(gcloud builds list --limit=1 --format="value(status)")
+          if [ "$FINAL_STATUS" != "SUCCESS" ]; then
+            echo "Build did not complete successfully. Final status: $FINAL_STATUS"
+            exit 1
           fi
           
           # Tag as latest
