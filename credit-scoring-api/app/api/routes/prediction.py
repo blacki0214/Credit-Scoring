@@ -1,16 +1,20 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Request, Depends
 from app.models.schemas import (
     PredictionRequest, PredictionResponse, LoanOfferResponse, 
-    SimpleLoanRequest, CreditScoreResponse,
-    LoanLimitResponse, LoanTermsRequest, LoanTermsResponse  # NEW SCHEMAS
+    SimpleLoanRequest, CreditScoreResponse, SimpleLoanApplicationResponse,
+    LoanLimitResponse, LoanTermsRequest, LoanTermsResponse
 )
 from app.services.prediction_service import prediction_service
 from app.services.loan_offer_service import loan_offer_service
 from app.services.smart_loan_offer import SmartLoanOfferService
 from app.services.request_converter import request_converter
 from app.services.feature_engineering import FeatureEngineer
-from app.services.loan_limit_calculator import loan_limit_calculator  # NEW
-from app.services.loan_terms_calculator import loan_terms_calculator  # NEW
+from app.services.loan_limit_calculator import loan_limit_calculator
+from app.services.loan_terms_calculator import loan_terms_calculator
+from app.services.score_mapper import probability_to_credit_score
+from app.core.security import verify_api_key
+from app.auth.firebase_auth import verify_firebase_token
+from app.core.config import settings
 import logging
 from typing import List
 
@@ -18,9 +22,20 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
+# Import limiter from main app
+from slowapi import Limiter
+from app.core.security import get_client_ip
+
+limiter = Limiter(key_func=get_client_ip)
+
 
 @router.post("/calculate-limit", response_model=LoanLimitResponse, status_code=status.HTTP_200_OK)
-async def calculate_loan_limit(application: SimpleLoanRequest):
+@limiter.limit(f"{settings.RATE_LIMIT_CALCULATE_LIMIT}/minute")
+async def calculate_loan_limit(
+    request: Request,
+    application: SimpleLoanRequest,
+    user: dict = Depends(verify_firebase_token),
+):
     """
     Calculate Loan Limit Endpoint (Step 1)
     
@@ -41,7 +56,6 @@ async def calculate_loan_limit(application: SimpleLoanRequest):
     - employment_status: EMPLOYED, SELF_EMPLOYED, or UNEMPLOYED
     - years_employed: Years in current employment
     - home_ownership: RENT, OWN, MORTGAGE, or LIVING_WITH_PARENTS
-    - loan_purpose: Loan purpose (for reference only, not used in limit calculation)
     - years_credit_history: Years of credit history
     - has_previous_defaults: Ever defaulted?
     - currently_defaulting: Currently in default?
@@ -56,16 +70,36 @@ async def calculate_loan_limit(application: SimpleLoanRequest):
     try:
         logger.info(f"Loan limit calculation for: {application.full_name}")
         
-        # Convert simple request to internal format and calculate credit score
+        # Convert simple request to internal format
         internal_request = request_converter.convert_simple_to_prediction(application)
-        credit_score = internal_request.credit_score
         
         # Calculate annual income
         annual_income_vnd = application.monthly_income * 12
         
-        # Get ML model risk assessment
+        # Get ML model prediction (probability + risk level)
         prediction_result = prediction_service.predict(internal_request)
         risk_level = prediction_result.risk_level
+        
+        # Derive credit score from ML probability (non-linear)
+        credit_score = probability_to_credit_score(prediction_result.probability)
+        
+        # HARD CAPS (Business Rules)
+        # 1. Currently defaulting -> Auto reject, cap at 580 (Very Poor)
+        if application.currently_defaulting:
+            credit_score = min(credit_score, 580)
+            risk_level = "Very High"
+        # 2. Previous defaults -> Cap at 650 (Fair)
+        elif application.has_previous_defaults:
+            credit_score = min(credit_score, 650)
+        # 3. Young/Unemployed -> Cap at 680 (Fair)
+        elif application.age <= 22 or application.employment_status == "UNEMPLOYED":
+            credit_score = min(credit_score, 680)
+        # 4. New to credit -> Cap at 700 (Good)
+        elif application.years_credit_history == 0:
+            credit_score = min(credit_score, 700)
+        # 5. Low income (<10M) -> Cap at 720 (Good)
+        elif application.monthly_income < 10000000:
+            credit_score = min(credit_score, 720)
         
         # Check minimum credit score
         min_credit_score = 600
@@ -127,7 +161,12 @@ async def calculate_loan_limit(application: SimpleLoanRequest):
 
 
 @router.post("/calculate-terms", response_model=LoanTermsResponse, status_code=status.HTTP_200_OK)
-async def calculate_loan_terms(request: LoanTermsRequest):
+@limiter.limit(f"{settings.RATE_LIMIT_CALCULATE_TERMS}/minute")
+async def calculate_loan_terms(
+    request: Request,
+    loan_terms_request: LoanTermsRequest,
+    user: dict = Depends(verify_firebase_token),
+):
     """
     Calculate Loan Terms Endpoint (Step 2)
     
@@ -160,15 +199,15 @@ async def calculate_loan_terms(request: LoanTermsRequest):
     """
     try:
         logger.info(
-            f"Loan terms calculation - Amount: {request.loan_amount:,.0f} VND, "
-            f"Purpose: {request.loan_purpose}, Credit score: {request.credit_score}"
+            f"Loan terms calculation - Amount: {loan_terms_request.loan_amount:,.0f} VND, "
+            f"Purpose: {loan_terms_request.loan_purpose}, Credit score: {loan_terms_request.credit_score}"
         )
         
         # Calculate loan terms
         loan_terms = loan_terms_calculator.calculate_loan_terms(
-            loan_amount=request.loan_amount,
-            loan_purpose=request.loan_purpose,
-            credit_score=request.credit_score
+            loan_amount=loan_terms_request.loan_amount,
+            loan_purpose=loan_terms_request.loan_purpose,
+            credit_score=loan_terms_request.credit_score
         )
         
         logger.info(
@@ -178,8 +217,8 @@ async def calculate_loan_terms(request: LoanTermsRequest):
         )
         
         return LoanTermsResponse(
-            loan_amount_vnd=request.loan_amount,
-            loan_purpose=request.loan_purpose,
+            loan_amount_vnd=loan_terms_request.loan_amount,
+            loan_purpose=loan_terms_request.loan_purpose,
             interest_rate=loan_terms["interest_rate"],
             loan_term_months=loan_terms["loan_term_months"],
             monthly_payment_vnd=loan_terms["monthly_payment_vnd"],
@@ -246,7 +285,12 @@ async def predict_loan(request: PredictionRequest):
 
 
 @router.post("/batch-predict", status_code=status.HTTP_200_OK)
-async def batch_predict(requests: List[PredictionRequest]):
+@limiter.limit(f"{settings.RATE_LIMIT_BATCH}/minute")
+async def batch_predict(
+    request: Request,
+    prediction_requests: List[PredictionRequest],
+    api_key: str = Depends(verify_api_key)
+):
     """
     Batch Prediction Endpoint
     
@@ -257,22 +301,31 @@ async def batch_predict(requests: List[PredictionRequest]):
     - count: Number of predictions made
     """
     try:
-        logger.info(f"Batch prediction request for {len(requests)} applications")
+        logger.info(f"Batch prediction request - {len(prediction_requests)} applications")
         
-        results = []
-        for request in requests:
-            result = prediction_service.predict(request)
-            results.append(result)
+        # Process all predictions
+        predictions = []
+        for pred_request in prediction_requests:
+            result = prediction_service.predict(pred_request)
+            predictions.append(result)
         
-        logger.info(f"Batch prediction complete: {len(results)} results")
+        # Calculate summary statistics
+        high_risk_count = sum(1 for p in predictions if p.risk_level == "HIGH")
+        medium_risk_count = sum(1 for p in predictions if p.risk_level == "MEDIUM")
+        low_risk_count = sum(1 for p in predictions if p.risk_level == "LOW")
+        
+        logger.info(
+            f"Batch prediction complete - High: {high_risk_count}, "
+            f"Medium: {medium_risk_count}, Low: {low_risk_count}"
+        )
         
         return {
-            "predictions": results, 
-            "count": len(results),
+            "predictions": predictions,
+            "count": len(predictions),
             "summary": {
-                "high_risk": sum(1 for r in results if r.risk_level in ["High", "Very High"]),
-                "medium_risk": sum(1 for r in results if r.risk_level == "Medium"),
-                "low_risk": sum(1 for r in results if r.risk_level == "Low")
+                "high_risk": high_risk_count,
+                "medium_risk": medium_risk_count,
+                "low_risk": low_risk_count
             }
         }
         
@@ -345,7 +398,12 @@ async def get_loan_offer(request: PredictionRequest):
 
 
 @router.post("/batch-loan-offers", status_code=status.HTTP_200_OK)
-async def batch_loan_offers(requests: List[PredictionRequest]):
+@limiter.limit(f"{settings.RATE_LIMIT_BATCH}/minute")
+async def batch_loan_offers(
+    request: Request,
+    prediction_requests: List[PredictionRequest],
+    api_key: str = Depends(verify_api_key)
+):
     """
     Batch Loan Offers Endpoint (VND Currency)
     
@@ -357,19 +415,12 @@ async def batch_loan_offers(requests: List[PredictionRequest]):
     - summary: Statistics of approvals and rejections
     """
     try:
-        logger.info(f"Batch loan offer request for {len(requests)} applications")
+        logger.info(f"Batch loan offers request - {len(prediction_requests)} applications")
         
+        # Process all loan offers
         offers = []
-        for req in requests:
-            # Get prediction
-            prediction_result = prediction_service.predict(req)
-            
-            # Calculate offer
-            offer = loan_offer_service.calculate_offer(
-                request=req,
-                probability=prediction_result.probability,
-                risk_level=prediction_result.risk_level
-            )
+        for pred_request in prediction_requests:
+            offer = loan_offer_service.generate_offer(pred_request.model_dump())
             offers.append(offer)
         
         logger.info(f"Batch loan offers complete: {len(offers)} results")
@@ -398,19 +449,19 @@ async def batch_loan_offers(requests: List[PredictionRequest]):
         )
 
 
-@router.post("/apply", response_model=LoanOfferResponse, status_code=status.HTTP_200_OK)
-async def apply_for_loan(application: SimpleLoanRequest):
+@router.post("/apply", response_model=SimpleLoanApplicationResponse, status_code=status.HTTP_200_OK)
+@limiter.limit(f"{settings.RATE_LIMIT_APPLY}/minute")
+async def apply_for_loan(
+    request: Request,
+    application: SimpleLoanRequest,
+    user: dict = Depends(verify_firebase_token),
+):
     """
-    Smart Loan Recommendation Endpoint
+    Loan Application Endpoint - Get Credit Score and Loan Limit
     
-    Get personalized loan recommendation based on your profile.
-    The system automatically:
-    1. Calculates your credit score
-    2. Determines your loan tier (PLATINUM/GOLD/SILVER/BRONZE)
-    3. Recommends maximum loan amount you qualify for
-    4. Assesses risk and sets interest rate
-    
-    *NO NEED to specify loan amount* - the system calculates the maximum you can safely borrow!
+    Submit your loan application to get:
+    1. Your credit score (300-850)
+    2. Maximum loan amount you qualify for
     
     *Request Body:*
     - full_name: Customer's full name
@@ -419,42 +470,46 @@ async def apply_for_loan(application: SimpleLoanRequest):
     - employment_status: EMPLOYED, SELF_EMPLOYED, or UNEMPLOYED
     - years_employed: Years in current employment
     - home_ownership: RENT, OWN, MORTGAGE, or LIVING_WITH_PARENTS
-    - loan_purpose: HOME, CAR, BUSINESS, EDUCATION, MEDICAL, DEBT_CONSOLIDATION, HOME_IMPROVEMENT, or PERSONAL
     - years_credit_history: How many years have you had credit/loans? (0 if none)
     - has_previous_defaults: Have you ever defaulted on a loan? (true/false)
     - currently_defaulting: Are you currently in default? (true/false)
     
     *Returns:*
-    - approved: Whether you qualify for a loan (true/false)
-    - loan_amount_vnd: Maximum recommended loan amount in VND
-    - max_amount_vnd: Maximum eligible amount in VND
-    - interest_rate: Annual interest rate (%)
-    - monthly_payment_vnd: Estimated monthly payment in VND
-    - loan_term_months: Loan term in months
-    - credit_score: Your calculated credit score
-    - risk_level: Risk assessment
-    - loan_tier: Your tier (PLATINUM/GOLD/SILVER/BRONZE)
-    - tier_reason: Why you were assigned this tier
-    - approval_message: Detailed approval/rejection message
-    
-    *Loan Tiers:*
-    - PLATINUM: Best rates, highest amounts (4.5x+ annual income)
-    - GOLD: Great rates, high amounts (3.5x annual income)
-    - SILVER: Good rates, moderate amounts (2.5x annual income)
-    - BRONZE: Standard rates, conservative amounts (1.5x annual income)
+    - credit_score: Your calculated credit score (300-850)
+    - loan_limit_vnd: Maximum loan amount in VND
     """
     try:
-        logger.info(f"Smart loan application from: {application.full_name}, Purpose: {application.loan_purpose}")
+        logger.info(f"Loan application from: {application.full_name}")
         
         # Convert simple request to full internal format
         internal_request = request_converter.convert_simple_to_prediction(application)
         
-        logger.info(f"Calculated credit score: {internal_request.credit_score}")
+        # Get ML model prediction (probability + risk level)
+        prediction_result = prediction_service.predict(internal_request)
+        risk_level = prediction_result.risk_level
+        
+        # Get proper credit score
+        credit_score = probability_to_credit_score(prediction_result.probability)
+        
+        # EXACT SAME HARD CAPS AS /calculate-limit
+        if application.currently_defaulting:
+            credit_score = min(credit_score, 580)
+            risk_level = "Very High"
+        elif application.has_previous_defaults:
+            credit_score = min(credit_score, 650)
+        elif application.age <= 22 or application.employment_status == "UNEMPLOYED":
+            credit_score = min(credit_score, 680)
+        elif application.years_credit_history == 0:
+            credit_score = min(credit_score, 700)
+        elif application.monthly_income < 10000000:
+            credit_score = min(credit_score, 720)
+        
+        logger.info(f"Calculated credit score: {credit_score}")
         
         # Calculate annual income
         annual_income_vnd = application.monthly_income * 12
         
-        # Generate smart loan offer with tier-based calculation
+        # Generate smart loan offer (without loan_purpose - only credit score and limit)
         smart_service = SmartLoanOfferService()
         offer = smart_service.generate_offer(
             request_dict=internal_request.model_dump(),
@@ -462,30 +517,40 @@ async def apply_for_loan(application: SimpleLoanRequest):
             years_employed=application.years_employed,
             employment_status=application.employment_status,
             home_ownership=application.home_ownership,
-            loan_purpose=application.loan_purpose,
+            loan_purpose=None,  # Not needed for credit score/limit calculation
             annual_income_vnd=annual_income_vnd,
             monthly_income_vnd=application.monthly_income,
-            credit_score=internal_request.credit_score
+            credit_score=credit_score # Use the potentially capped credit score
+        )
+        
+        # Return only credit score and loan limit
+        response = SimpleLoanApplicationResponse(
+            credit_score=offer['credit_score'],
+            loan_limit_vnd=offer['max_amount_vnd']
         )
         
         logger.info(
-            f"Application processed: Tier={offer['loan_tier']}, "
-            f"Approved={offer['approved']}, Amount={offer['loan_amount_vnd']:,.0f} VND, "
-            f"Score={offer['credit_score']}"
+            f"Application processed: Score={response.credit_score}, "
+            f"Limit={response.loan_limit_vnd:,.0f} VND"
         )
         
-        return offer
+        return response
         
     except Exception as e:
-        logger.error(f"Smart loan application error: {e}")
+        logger.error(f"Loan application error: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Smart loan recommendation failed: {str(e)}"
+            detail=f"Loan application failed: {str(e)}"
         )
 
 
 @router.post("/credit-score", response_model=CreditScoreResponse, status_code=status.HTTP_200_OK)
-async def calculate_credit_score(application: SimpleLoanRequest):
+@limiter.limit(f"{settings.RATE_LIMIT_CALCULATE_LIMIT}/minute")
+async def calculate_credit_score(
+    request: Request,
+    application: SimpleLoanRequest,
+    user: dict = Depends(verify_firebase_token),
+):
     """
     Credit Score Calculator Endpoint (For Dashboard)
     
@@ -499,7 +564,6 @@ async def calculate_credit_score(application: SimpleLoanRequest):
     - employment_status: EMPLOYED, SELF_EMPLOYED, or UNEMPLOYED
     - years_employed: Years in current employment
     - home_ownership: RENT, OWN, MORTGAGE, or LIVING_WITH_PARENTS
-    - loan_purpose: Loan purpose (used for context only)
     - years_credit_history: How many years have you had credit/loans?
     - has_previous_defaults: Have you ever defaulted on a loan?
     - currently_defaulting: Are you currently in default?
@@ -536,17 +600,30 @@ async def calculate_credit_score(application: SimpleLoanRequest):
             reference_loan_amount
         )
         
-        # Convert to internal format to get loan grade
+        # ML Pipeline calculation
         internal_request = request_converter.convert_simple_to_prediction(application)
-        
-        # Get risk level from prediction
         prediction_result = prediction_service.predict(internal_request)
+        credit_score = probability_to_credit_score(prediction_result.probability)
+        risk_level = prediction_result.risk_level
+        
+        # EXACT SAME HARD CAPS AS /calculate-limit
+        if application.currently_defaulting:
+            credit_score = min(credit_score, 580)
+            risk_level = "Very High"
+        elif application.has_previous_defaults:
+            credit_score = min(credit_score, 650)
+        elif application.age <= 22 or application.employment_status == "UNEMPLOYED":
+            credit_score = min(credit_score, 680)
+        elif application.years_credit_history == 0:
+            credit_score = min(credit_score, 700)
+        elif application.monthly_income < 10000000:
+            credit_score = min(credit_score, 720)
         
         response = CreditScoreResponse(
             full_name=application.full_name,
-            credit_score=score_details["final_score"],
+            credit_score=credit_score, # Use the potentially capped credit score
             loan_grade=internal_request.loan_grade,
-            risk_level=prediction_result.risk_level,
+            risk_level=risk_level, # Use the potentially updated risk_level
             score_breakdown=score_details
         )
         

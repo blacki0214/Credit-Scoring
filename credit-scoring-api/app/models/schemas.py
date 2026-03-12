@@ -76,8 +76,8 @@ class SimpleLoanRequest(BaseModel):
     # Residence Information
     home_ownership: str = Field(..., description="Home ownership (RENT, OWN, MORTGAGE, LIVING_WITH_PARENTS)")
     
-    # Loan Details - NO AMOUNT NEEDED, system calculates it!
-    loan_purpose: str = Field(..., description="Loan purpose (PERSONAL, EDUCATION, MEDICAL, BUSINESS, HOME_IMPROVEMENT, DEBT_CONSOLIDATION, CAR, HOME)")
+    # Loan Details - Optional, only needed for Step 2 (interest rate calculation)
+    loan_purpose: Optional[str] = Field(None, description="Loan purpose - OPTIONAL (only needed for Step 2: calculate-terms). Options: PERSONAL, EDUCATION, MEDICAL, BUSINESS, HOME_IMPROVEMENT, DEBT_CONSOLIDATION, CAR, HOME")
     
     # Credit History (Simple questions)
     years_credit_history: int = Field(0, description="How many years have you had credit/loans?", ge=0)
@@ -93,7 +93,6 @@ class SimpleLoanRequest(BaseModel):
                 "employment_status": "EMPLOYED",
                 "years_employed": 5.0,
                 "home_ownership": "MORTGAGE",
-                "loan_purpose": "HOME",
                 "years_credit_history": 5,
                 "has_previous_defaults": False,
                 "currently_defaulting": False
@@ -168,6 +167,21 @@ class LoanOfferResponse(BaseModel):
                 "credit_score": 750,
                 "risk_level": "Low",
                 "approval_message": "Loan approved! Maximum loan: 420,000,000 VND. Low risk at 8.5% APR. Credit score: 750."
+            }
+        }
+
+
+class SimpleLoanApplicationResponse(BaseModel):
+    """Simplified response for /api/apply - only credit score and loan limit"""
+    
+    credit_score: int = Field(..., description="Customer's credit score (300-850)")
+    loan_limit_vnd: float = Field(..., description="Maximum loan amount customer qualifies for in VND")
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "credit_score": 750,
+                "loan_limit_vnd": 420000000
             }
         }
 

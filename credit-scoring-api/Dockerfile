@@ -1,31 +1,35 @@
-FROM python:3.10-slim
+# Use Python 3.11 slim image (updated from 3.10)
+FROM python:3.11-slim
 
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies
+# Install system dependencies for lightgbm and other packages
 RUN apt-get update && apt-get install -y \
-    build-essential \
+    gcc \
+    g++ \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements first (for better caching)
+# Copy requirements first (for Docker layer caching)
 COPY requirements.txt .
 
 # Install Python dependencies
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
-# Copy application code
+# Copy application code and models
 COPY app/ ./app/
 COPY models/ ./models/
 
-# Expose port
-EXPOSE 8000
+# Cloud Run uses PORT environment variable (default 8080)
+# But we'll make it flexible
+ENV PORT=8080
+EXPOSE ${PORT}
 
-# Health check - Use correct path with /api prefix
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f https://credit-scoring-h7mv.onrender.com/docs#/Health/health_check_api_health_get || exit 1
+# Health check - Use environment variable for port
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:${PORT}/api/health || exit 1
 
-# Run application
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Run application - Use PORT env variable for Cloud Run compatibility
+CMD exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT} --workers 1
