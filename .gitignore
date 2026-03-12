@@ -11,3 +11,9 @@ credit-scoring-api/.env
 # Exclude documentation markdown files
 app/*.md
 .github/skills/**/*.md
+
+# Setup scripts and credentials (local use only)
+setup-*.ps1
+fix-*.ps1
+*-key.json
+github-actions-key.json
