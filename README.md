@@ -9,7 +9,7 @@
 [![XGBoost](https://img.shields.io/badge/XGBoost-ML-orange?style=for-the-badge)](https://lightgbm.readthedocs.io/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
 
-[📚 Live API Docs](https://credit-scoring-y8mw.onrender.com/docs) • [🚀 Quick Start](#-quick-start) • [📖 Integration Guide](#-integration-guide)
+[📚 Live API Docs](https://credit-scoring-api-wrkfygkl6a-as.a.run.app/docs) • [🚀 Quick Start](#-quick-start) • [📖 Integration Guide](#-integration-guide)
 
 </div>
 
@@ -50,7 +50,7 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload --port 8000
 ```
 
-**🌐 Open:** https://credit-scoring-y8mw.onrender.com/docs
+**🌐 Open:** https://credit-scoring-api-wrkfygkl6a-as.a.run.app/docs
 
 ---
 
@@ -221,7 +221,7 @@ headers = {
 }
 
 response = requests.post(
-    "https://credit-scoring-y8mw.onrender.com/api/calculate-limit",
+    "https://credit-scoring-api-wrkfygkl6a-as.a.run.app/caculate-limit",
     headers=headers,
     json={...}
 )
@@ -229,7 +229,7 @@ response = requests.post(
 
 **JavaScript:**
 ```javascript
-const response = await fetch('https://credit-scoring-y8mw.onrender.com/api/calculate-limit', {
+const response = await fetch('https://credit-scoring-api-wrkfygkl6a-as.a.run.app/caculate-limit', {
   method: 'POST',
   headers: {
     'X-API-Key': 'your-api-key-here',
@@ -241,7 +241,7 @@ const response = await fetch('https://credit-scoring-y8mw.onrender.com/api/calcu
 
 **cURL:**
 ```bash
-curl -X POST "https://credit-scoring-y8mw.onrender.com/api/calculate-limit" \
+curl -X POST "https://credit-scoring-api-wrkfygkl6a-as.a.run.app/caculate-limit" \
   -H "X-API-Key: your-api-key-here" \
   -H "Content-Type: application/json" \
   -d '{...}'
@@ -387,7 +387,7 @@ CAR loan (base 7.5%) + Credit score 750 (-1.0%) = 6.5% final rate 🎯
 ```python
 import requests
 
-API_URL = "https://credit-scoring-y8mw.onrender.com"
+API_URL = "https://credit-scoring-api-wrkfygkl6a-as.a.run.app/docs"
 API_KEY = "your-api-key-here"  # Get from admin
 
 headers = {
@@ -430,7 +430,7 @@ print(f"Total Payment: {terms['total_payment_vnd']:,} VND")
 ### 🟨 JavaScript/TypeScript Example
 
 ```javascript
-const API_URL = 'https://credit-scoring-y8mw.onrender.com';
+const API_URL = 'https://credit-scoring-api-wrkfygkl6a-as.a.run.app/docs';
 const API_KEY = 'your-api-key-here';  // Get from admin
 
 // Step 1: Get credit score and loan limit
@@ -520,7 +520,7 @@ USE_XGBOOST=true
 ### Interactive API Documentation
 
 - 🏠 **Local:** http://localhost:8000/docs
-- 🌐 **Live:** https://credit-scoring-y8mw.onrender.com/docs
+- 🌐 **Live:** https://credit-scoring-api-wrkfygkl6a-as.a.run.app/docs
 
 ### Test Cases
 
@@ -652,7 +652,7 @@ MIT License - Free to use for commercial and personal projects
 
 ## 💬 Support
 
-- 📚 **API Documentation:** https://credit-scoring-y8mw.onrender.com/docs
+- 📚 **API Documentation:** https://credit-scoring-api-wrkfygkl6a-as.a.run.app/docs
 - 🐛 **Issues:** Create a GitHub issue
 - ❓ **Questions:** Check API docs first
 - 🔑 **API Key:** Contact admin for access
