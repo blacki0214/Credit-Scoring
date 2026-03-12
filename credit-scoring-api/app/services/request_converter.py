@@ -32,14 +32,21 @@ class RequestConverter:
         }
         
         # Map loan purpose to loan intent
+        # Note: loan_purpose is now optional. Use "PERSONAL" as default for ML model compatibility
+        # The actual purpose doesn't affect credit score calculation since we use a reference loan amount
         purpose_map = {
             "PERSONAL": "PERSONAL",
             "EDUCATION": "EDUCATION",
             "MEDICAL": "MEDICAL",
             "BUSINESS": "VENTURE",
             "HOME_IMPROVEMENT": "HOMEIMPROVEMENT",
-            "DEBT_CONSOLIDATION": "DEBTCONSOLIDATION"
+            "DEBT_CONSOLIDATION": "DEBTCONSOLIDATION",
+            "CAR": "PERSONAL",  # Map CAR to PERSONAL for ML model
+            "HOME": "PERSONAL"   # Map HOME to PERSONAL for ML model
         }
+        
+        # Use default "PERSONAL" if loan_purpose is not provided
+        loan_purpose = simple_req.loan_purpose or "PERSONAL"
         
         # Calculate loan grade based on credit score and defaults
         loan_grade = self._calculate_loan_grade(credit_score, simple_req.has_previous_defaults)
@@ -57,7 +64,7 @@ class RequestConverter:
             person_emp_length=simple_req.years_employed,
             person_home_ownership=home_ownership_map.get(simple_req.home_ownership, "OTHER"),
             loan_amnt=loan_amount_usd,
-            loan_intent=purpose_map.get(simple_req.loan_purpose, "PERSONAL"),
+            loan_intent=purpose_map.get(loan_purpose, "PERSONAL"),
             loan_grade=loan_grade,
             loan_int_rate=interest_rate,
             loan_percent_income=loan_percent_income,
