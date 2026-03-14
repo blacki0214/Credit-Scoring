@@ -28,7 +28,7 @@ Receive automated email reports when model retraining completes, including:
 ### Option 1: SendGrid Setup
 
 #### Step 1: Create SendGrid Account
-1. Go to https://signup.sendgrid.com/
+1. Go to https://signup.sendgrid.com/,
 2. Sign up for free account (100 emails/day free)
 3. Verify your email address
 
