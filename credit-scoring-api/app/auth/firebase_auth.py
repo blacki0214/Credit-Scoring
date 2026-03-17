@@ -7,7 +7,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 # to verify tokens against. Uses GCP Application Default Credentials on Cloud Run.
 if not firebase_admin._apps:
     firebase_admin.initialize_app(options={
-        'projectId': 'credit-scoring-22b28'
+        'projectId': 'creditscore-c560f'
     })
 
 security = HTTPBearer()
