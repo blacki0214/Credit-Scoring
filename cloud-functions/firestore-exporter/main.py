@@ -7,6 +7,7 @@ from google.cloud import firestore, storage
 import pandas as pd
 from datetime import datetime
 import json
+import os
 import functions_framework
 from typing import Any, Dict, cast
 
@@ -23,7 +24,9 @@ def export_firestore_to_gcs(request):
     try:
         db = firestore.Client()
         storage_client = storage.Client()
-        bucket = storage_client.bucket('credit-scoring-retrain-976448868286')
+        # Allow bucket override per environment to support different projects.
+        export_bucket = os.getenv('GCS_EXPORT_BUCKET', 'mlretrain')
+        bucket = storage_client.bucket(export_bucket)
         
         # Query all scored applications
         applications_ref = db.collection('loan_applications')
@@ -96,7 +99,7 @@ def export_firestore_to_gcs(request):
                 'earliest': df['timestamp'].min().isoformat() if 'timestamp' in df.columns else None,
                 'latest': df['timestamp'].max().isoformat() if 'timestamp' in df.columns else None,
             },
-            'gcs_path': f'gs://credit-scoring-retrain-976448868286/data/exports/loan_applications_{timestamp}.parquet'
+            'gcs_path': f'gs://{export_bucket}/data/exports/loan_applications_{timestamp}.parquet'
         }
         
         metadata_blob = bucket.blob(f'data/exports/metadata_{timestamp}.json')
@@ -107,7 +110,7 @@ def export_firestore_to_gcs(request):
             'records_exported': len(records),
             'labeled_records': metadata['labeled_records'],
             'gcs_path': metadata['gcs_path'],
-            'metadata_path': f'gs://credit-scoring-retrain-976448868286/data/exports/metadata_{timestamp}.json'
+            'metadata_path': f'gs://{export_bucket}/data/exports/metadata_{timestamp}.json'
         }
         
     except Exception as e:
