@@ -1,8 +1,9 @@
 from fastapi import APIRouter, HTTPException, status, Request, Depends
 from app.models.schemas import (
-    PredictionRequest, PredictionResponse, LoanOfferResponse, 
+    PredictionRequest, PredictionResponse, LoanOfferResponse,
     SimpleLoanRequest, CreditScoreResponse, SimpleLoanApplicationResponse,
-    LoanLimitResponse, LoanTermsRequest, LoanTermsResponse
+    LoanLimitResponse, LoanTermsRequest, LoanTermsResponse,
+    StudentLoanRequest,
 )
 from app.services.prediction_service import prediction_service
 from app.services.loan_offer_service import loan_offer_service
@@ -12,6 +13,7 @@ from app.services.feature_engineering import FeatureEngineer
 from app.services.loan_limit_calculator import loan_limit_calculator
 from app.services.loan_terms_calculator import loan_terms_calculator
 from app.services.score_mapper import probability_to_credit_score
+from app.services.student_prediction_service import student_prediction_service
 from app.core.security import verify_api_key
 from app.auth.firebase_auth import verify_firebase_token
 from app.core.config import settings
@@ -637,3 +639,99 @@ async def calculate_credit_score(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Credit score calculation failed: {str(e)}"
         )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Student Alternative Model Endpoint
+# ─────────────────────────────────────────────────────────────────────────────
+
+@router.post("/student/calculate-limit", response_model=LoanLimitResponse, status_code=status.HTTP_200_OK)
+@limiter.limit(f"{settings.RATE_LIMIT_CALCULATE_LIMIT}/minute")
+async def student_calculate_limit(
+    request: Request,
+    application: StudentLoanRequest,
+    user: dict = Depends(verify_firebase_token),
+):
+    """
+    Student Loan Limit Endpoint — Alternative Model (XGBoost)
+
+    Calculates credit score and loan limit (5M–10M VND) for students
+    using the alternative credit scoring model trained on student profiles.
+
+    *Hard rules applied before model:*
+    - Year-1 students with GPA < 2.0 are auto-rejected
+    - Loan amount must be 5,000,000–10,000,000 VND (enforced by schema)
+    - Risk = High / Very High → loan capped at 5,000,000 VND
+
+    *Returns the same shape as /calculate-limit for Flutter compatibility.*
+    """
+    if not student_prediction_service.is_ready:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Student model not loaded. Please contact support.",
+        )
+
+    try:
+        logger.info(f"Student loan request — user: {user.get('uid', 'unknown')}")
+
+        # ── Hard gate: Year-1 + low GPA ────────────────────────────────────
+        if application.academic_year == 1 and application.gpa_latest < 2.0:
+            return LoanLimitResponse(
+                credit_score=600,
+                loan_limit_vnd=0.0,
+                risk_level="Very High",
+                approved=False,
+                message=(
+                    "Sinh viên năm nhất cần GPA ≥ 2.0 để đủ điều kiện vay. "
+                    "Hãy cải thiện kết quả học tập và thử lại."
+                ),
+            )
+
+        # ── Model prediction ────────────────────────────────────────────────
+        raw = application.model_dump()
+        default_prob, risk_level, credit_score = student_prediction_service.predict(raw)
+
+        # ── Loan limit (5M–10M hard cap) ────────────────────────────────────
+        loan_limit, limit_reason = loan_limit_calculator.calculate_student_loan(
+            credit_score=credit_score,
+            risk_level=risk_level,
+        )
+
+        # ── Approval decision ───────────────────────────────────────────────
+        approved = default_prob < DEFAULT_STUDENT_THRESHOLD
+
+        if not approved:
+            message = (
+                f"Điểm tín dụng: {credit_score}. Xác suất rủi ro ({default_prob:.1%}) "
+                f"vượt ngưỡng chấp nhận. Hạn mức: 0 VND."
+            )
+            loan_limit = 0.0
+        else:
+            message = (
+                f"Điểm tín dụng: {credit_score}. {limit_reason}. "
+                f"Hạn mức vay: {loan_limit:,.0f} VND."
+            )
+
+        logger.info(
+            f"Student loan calculated — score={credit_score}, "
+            f"limit={loan_limit:,.0f} VND, risk={risk_level}, approved={approved}"
+        )
+
+        return LoanLimitResponse(
+            credit_score=credit_score,
+            loan_limit_vnd=loan_limit,
+            risk_level=risk_level,
+            approved=approved,
+            message=message,
+        )
+
+    except Exception as e:
+        logger.error(f"Student loan calculation error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Student loan calculation failed: {str(e)}",
+        )
+
+
+# Approval threshold for student model (conservative)
+DEFAULT_STUDENT_THRESHOLD = 0.45

@@ -11,3 +11,5 @@ credit-scoring-api/.env
 # Exclude documentation markdown files
 app/*.md
 .github/skills/**/*.md
+*.pyc
+/credit-scoring-api/app/__pycache__

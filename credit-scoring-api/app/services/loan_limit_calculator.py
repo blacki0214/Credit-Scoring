@@ -18,6 +18,10 @@ logger = logging.getLogger(__name__)
 class LoanLimitCalculator:
     """Calculate maximum loan amount based on credit score and income."""
     
+    # Student (alternative model) loan caps in VND
+    STUDENT_LOAN_MIN = 5_000_000   # 5M VND
+    STUDENT_LOAN_MAX = 10_000_000  # 10M VND
+    
     def __init__(self):
         # DTI limits by risk level
         self.dti_limits = {
@@ -124,6 +128,53 @@ class LoanLimitCalculator:
         )
         
         return adjusted_loan, reason
+    
+    def calculate_student_loan(
+        self,
+        credit_score: int,
+        risk_level: str,
+    ) -> Tuple[float, str]:
+        """
+        Calculate loan limit for student (alternative model).
+        Hard cap: 5,000,000 – 10,000,000 VND regardless of income.
+        
+        Score tiers within the cap:
+        - credit_score >= 720: 10M (max)
+        - credit_score >= 680: 8M
+        - credit_score >= 650: 6M
+        - credit_score >= 600: 5M (min)
+        
+        Returns:
+            (loan_amount_vnd, reason)
+        """
+        if credit_score >= 720:
+            amount = 10_000_000
+            tier = "excellent student profile"
+        elif credit_score >= 680:
+            amount = 8_000_000
+            tier = "good student profile"
+        elif credit_score >= 650:
+            amount = 6_000_000
+            tier = "fair student profile"
+        else:
+            amount = 5_000_000
+            tier = "minimum student tier"
+        
+        # Risk adjustment: cap at 5M for High/Very High risk
+        if risk_level in ("High", "Very High"):
+            amount = self.STUDENT_LOAN_MIN
+            tier += " (capped due to risk level)"
+        
+        reason = (
+            f"{tier} — student loan range "
+            f"{self.STUDENT_LOAN_MIN/1e6:.0f}M–{self.STUDENT_LOAN_MAX/1e6:.0f}M VND"
+        )
+        
+        logger.info(
+            f"Student loan limit — credit_score={credit_score}, "
+            f"risk={risk_level}, amount={amount:,} VND"
+        )
+        return float(amount), reason
     
     def calculate_dti_ratio(
         self,
