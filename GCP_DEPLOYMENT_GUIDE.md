@@ -66,9 +66,9 @@ gsutil mb -l asia-southeast1 gs://retrain
 ### Step 3: Upload Current Models to GCS
 ```bash
 cd credit-scoring-api
-gsutil cp models/xgboost_final.pkl gs://retrain/models/production/
-gsutil cp models/lgb_model_optimized.pkl gs://retrain/models/production/
-gsutil cp models/ensemble_comparison_metadata.pkl gs://retrain/models/production/
+gsutil cp models/xgboost_final.pkl gs://mlretrain/models/production/
+gsutil cp models/lgb_model_optimized.pkl gs://mlretrain/models/production/
+gsutil cp models/ensemble_comparison_metadata.pkl gs://mlretrain/models/production/
 ```
 
 ### Step 4: Deploy API to Cloud Run
@@ -80,7 +80,7 @@ gcloud run deploy credit-scoring-api \
   --platform managed \
   --region asia-southeast1 \
   --allow-unauthenticated \
-  --set-env-vars "ENVIRONMENT=production,LOG_LEVEL=INFO,GCS_MODEL_BUCKET=retrain,GCS_MODEL_PREFIX=models/production" \
+  --set-env-vars "ENVIRONMENT=production,LOG_LEVEL=INFO,GCS_MODEL_BUCKET=mlretrain,GCS_MODEL_PREFIX=models/production" \
   --set-secrets "SECRET_KEY=credit-api-secret-key:latest,API_KEY=credit-api-key:latest" \
   --memory 2Gi \
   --cpu 2 \
