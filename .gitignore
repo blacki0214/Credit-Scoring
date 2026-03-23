@@ -11,6 +11,8 @@ credit-scoring-api/.env
 # Exclude documentation markdown files
 app/*.md
 .github/skills/**/*.md
+*.pyc
+/credit-scoring-api/app/__pycache__
 
 # Setup scripts and credentials (local use only)
 setup-*.ps1

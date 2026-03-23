@@ -23,10 +23,6 @@ MODELS = {
         "model": os.path.join(ARTIFACT_DIR, "best_model_xgboost.pkl"),
         "features": os.path.join(ARTIFACT_DIR, "feature_cols.pkl"),
     },
-    "user_friendly_xgboost": {
-        "model": os.path.join(ARTIFACT_DIR, "best_model_user_friendly_xgboost.pkl"),
-        "features": os.path.join(ARTIFACT_DIR, "user_friendly_feature_cols.pkl"),
-    },
 }
 
 X_FILES = {
@@ -61,54 +57,6 @@ def _load_x_candidates() -> Dict[str, pd.DataFrame]:
     return candidates
 
 
-def _add_user_friendly_engineered_features(x_df: pd.DataFrame) -> pd.DataFrame:
-    enriched = x_df.copy()
-
-    if (
-        "loan_to_maturity_ratio" not in enriched.columns
-        and "loan_amount" in enriched.columns
-        and "maturity_score" in enriched.columns
-    ):
-        enriched["loan_to_maturity_ratio"] = enriched["loan_amount"] / (enriched["maturity_score"] + 0.1)
-
-    if (
-        "academic_maturity" not in enriched.columns
-        and "academic_year" in enriched.columns
-        and "maturity_score" in enriched.columns
-    ):
-        enriched["academic_maturity"] = enriched["academic_year"] * enriched["maturity_score"]
-
-    if (
-        "gpa_x_maturity" not in enriched.columns
-        and "gpa_latest" in enriched.columns
-        and "maturity_score" in enriched.columns
-    ):
-        enriched["gpa_x_maturity"] = enriched["gpa_latest"] * enriched["maturity_score"]
-
-    if "gpa_gap_from_4" not in enriched.columns and "gpa_latest" in enriched.columns:
-        enriched["gpa_gap_from_4"] = 4.0 - enriched["gpa_latest"]
-
-    if (
-        "living_x_income_potential" not in enriched.columns
-        and "living_status" in enriched.columns
-        and "major_income_potential" in enriched.columns
-    ):
-        enriched["living_x_income_potential"] = (
-            enriched["living_status"] * enriched["major_income_potential"]
-        )
-
-    if (
-        "loan_x_income_potential" not in enriched.columns
-        and "loan_amount" in enriched.columns
-        and "major_income_potential" in enriched.columns
-    ):
-        enriched["loan_x_income_potential"] = (
-            enriched["loan_amount"] * enriched["major_income_potential"]
-        )
-
-    return enriched
-
-
 def _select_feature_matrix(
     feature_cols: List[str], x_candidates: Dict[str, pd.DataFrame]
 ) -> Tuple[pd.DataFrame, str]:
@@ -116,12 +64,6 @@ def _select_feature_matrix(
         missing = [c for c in feature_cols if c not in x_df.columns]
         if not missing:
             return x_df[feature_cols], name
-
-        # Try reconstructing user-friendly engineered features from raw columns.
-        enriched = _add_user_friendly_engineered_features(x_df)
-        missing_after_enrich = [c for c in feature_cols if c not in enriched.columns]
-        if not missing_after_enrich:
-            return enriched[feature_cols], f"{name} (+derived)"
 
     missing_report = {
         name: [c for c in feature_cols if c not in x_df.columns][:10]

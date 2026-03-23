@@ -1,0 +1,32 @@
+{
+  "phase1_features": [
+    "financial_stress_index",
+    "academic_resilience",
+    "risk_compounding",
+    "loan_to_maturity_ratio"
+  ],
+  "phase2_features": [
+    "risk_concentration",
+    "gpa_income_adjusted",
+    "debt_capacity",
+    "support_adjusted_shock",
+    "academic_behavior_gap",
+    "pressure_resilience"
+  ],
+  "best_threshold": 0.36232858896255493,
+  "best_params": {
+    "max_depth": 3,
+    "learning_rate": 0.10425900098818623,
+    "n_estimators": 200,
+    "min_child_weight": 20,
+    "subsample": 0.6051201001159638,
+    "colsample_bytree": 0.7708481632492534,
+    "gamma": 0.06779913351859826,
+    "reg_alpha": 1.2349421998680534,
+    "reg_lambda": 0.7382318988613381,
+    "objective": "binary:logistic",
+    "eval_metric": "auc",
+    "random_state": 42,
+    "early_stopping_rounds": 50
+  }
+}

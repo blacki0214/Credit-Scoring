@@ -314,7 +314,74 @@ class CreditScoreResponse(BaseModel):
         }
 
 
+class StudentLoanRequest(BaseModel):
+    """Request for POST /api/student/calculate-limit (alternative model)."""
+
+    # Academic
+    gpa_latest: float = Field(..., description="Current GPA (0.0–4.0)", ge=0.0, le=4.0)
+    academic_year: int = Field(..., description="Academic year (1–5)", ge=1, le=5)
+    major: str = Field(
+        "other",
+        description=(
+            "Major field: technology, engineering, medicine, business, "
+            "finance, law, education, arts, social_science, other"
+        ),
+    )
+    program_level: str = Field(
+        "undergraduate",
+        description="Program level: undergraduate or postgraduate",
+    )
+
+    # Loan
+    loan_amount: int = Field(
+        ...,
+        description="Requested loan amount in VND (5,000,000–10,000,000)",
+        ge=5_000_000,
+        le=10_000_000,
+    )
+
+    # Living & support
+    living_status: str = Field(
+        "dormitory",
+        description="Living situation: dormitory, with_parents, renting",
+    )
+    has_buffer: bool = Field(False, description="Has savings buffer?")
+    support_sources: List[str] = Field(
+        default_factory=list,
+        description="Financial support sources: family, scholarship, part_time",
+    )
+
+    # Financial (optional — better score if provided)
+    monthly_income: Optional[float] = Field(
+        None,
+        description="Monthly income from part-time work in VND (optional)",
+        ge=0,
+    )
+    monthly_expenses: Optional[float] = Field(
+        None,
+        description="Estimated monthly expenses in VND (optional)",
+        ge=0,
+    )
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "gpa_latest": 3.2,
+                "academic_year": 3,
+                "major": "technology",
+                "program_level": "undergraduate",
+                "loan_amount": 8000000,
+                "living_status": "dormitory",
+                "has_buffer": True,
+                "support_sources": ["family", "part_time"],
+                "monthly_income": 2000000,
+                "monthly_expenses": 3000000,
+            }
+        }
+
+
 class ModelInfoResponse(BaseModel):
+
     """Response schema for model information"""
     
     model_type: str
