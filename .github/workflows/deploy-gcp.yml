@@ -58,27 +58,6 @@ jobs:
           gcloud config set project ${{ env.PROJECT_ID }}
           gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
       
-      - name: Enable Required APIs
-        run: |
-          gcloud services enable artifactregistry.googleapis.com --project=${{ env.PROJECT_ID }}
-          gcloud services enable run.googleapis.com --project=${{ env.PROJECT_ID }}
-          gcloud services enable cloudbuild.googleapis.com --project=${{ env.PROJECT_ID }}
-        continue-on-error: true
-      
-      - name: Create Artifact Registry Repository (if not exists)
-        run: |
-          # Check if repository exists
-          if ! gcloud artifacts repositories describe ${{ env.REPOSITORY }} \
-            --location=${{ env.REGION }} &>/dev/null; then
-            echo "Creating Artifact Registry repository..."
-            gcloud artifacts repositories create ${{ env.REPOSITORY }} \
-              --repository-format=docker \
-              --location=${{ env.REGION }} \
-              --description="Docker repository for Credit Scoring API"
-          else
-            echo "Repository already exists"
-          fi
-      
       - name: Build and Push Docker Image with Cloud Build
         run: |
           cd credit-scoring-api
