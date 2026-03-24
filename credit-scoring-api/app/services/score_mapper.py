@@ -1,27 +1,24 @@
 """
 Score Mapper Service
 
-Converts the ML model's default probability output into a
-standardized credit score on the 300–850 scale.
+Two independent, non-conflicting score mappers:
 
-Formula:  credit_score = round(850 - probability * 550)
+1. probability_to_credit_score      — Regular loan model (LightGBM)
+   Scale: 300–850  |  Formula: linear  |  Used by: /calculate-limit, /apply
 
-| Default Probability | Credit Score | Meaning       |
-|---------------------|--------------|---------------|
-| 0.00                | 850          | Perfect       |
-| 0.05                | 822          | Excellent     |
-| 0.25                | 712          | Good          |
-| 0.50                | 575          | Fair          |
-| 0.75                | 437          | Poor          |
-| 1.00                | 300          | Very Poor     |
+2. student_probability_to_credit_score — Student loan model (XGBoost Phase-1)
+   Scale: 600–850  |  Formula: non-linear (power)  |  Used by: /student/calculate-limit
+
+Keeping them separate prevents any calibration change on one model
+from accidentally affecting the other.
 """
 
 
 def probability_to_credit_score(probability: float) -> int:
     """
-    Map default probability (0.0–1.0) → credit score (300–850).
+    Regular loan mapper: prob (0–1) → credit score (300–850). STABLE — do not modify.
 
-    Linear mapping: lower probability → higher score.
+    Linear formula so the LightGBM output maps cleanly to the full 300–850 scale.
 
     | Default Probability | Credit Score |
     |---------------------|--------------|
@@ -33,6 +30,27 @@ def probability_to_credit_score(probability: float) -> int:
     """
     raw = 850 - (probability * 550)
     return int(round(max(300, min(850, raw))))
+
+
+def student_probability_to_credit_score(probability: float) -> int:
+    """
+    Student loan mapper: prob (0–1) → credit score (600–850). STABLE — do not modify.
+
+    Non-linear (power curve) on a tighter 600–850 scale because student
+    applicants are a narrower, lower-exposure risk band than regular borrowers.
+
+    Formula: 850 - int((prob ** 0.6) * 250)  →  clamped to [600, 850]
+
+    | Default Probability | Credit Score |
+    |---------------------|--------------|
+    | 0.00                | 850          |
+    | 0.20                | 716          |
+    | 0.50                | 685          |
+    | 0.80                | 641          |
+    | 1.00                | 600          |
+    """
+    score = 850 - int((probability ** 0.6) * 250)
+    return max(600, min(850, score))
 
 
 def credit_score_to_rating(credit_score: int) -> str:

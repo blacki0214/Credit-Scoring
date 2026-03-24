@@ -13,6 +13,7 @@ import numpy as np
 import pandas as pd
 from pathlib import Path
 from typing import Tuple
+from app.services.score_mapper import student_probability_to_credit_score
 
 logger = logging.getLogger(__name__)
 
@@ -149,16 +150,9 @@ class StudentPredictionService:
         else:
             risk = "Very High"
 
-        # Map probability → 600–850 student score range
-        score = self._prob_to_score(prob)
+        # Use centralized student score mapper (score_mapper.py)
+        score = student_probability_to_credit_score(prob)
         return prob, risk, score
-
-    @staticmethod
-    def _prob_to_score(prob: float) -> int:
-        """Non-linear mapping prob → student credit score (600–850)."""
-        # Low probability → high score (safe applicant)
-        score = 850 - int((prob ** 0.6) * 250)
-        return max(600, min(850, score))
 
 
 # Singleton

@@ -3,7 +3,12 @@ name: Deploy to Google Cloud Run
 # Required GitHub Secrets (using Workload Identity Federation - no keys needed!):
 # - GCP_PROJECT_ID: creditscore-c560f
 # - GCP_SERVICE_ACCOUNT: github-actions-cicd@creditscore-c560f.iam.gserviceaccount.com
-# - GCP_WORKLOAD_IDENTITY_PROVIDER: projects/<PROJECT_NUMBER>/locations/global/workloadIdentityPools/<POOL>/providers/<PROVIDER>
+# - GCP_WORKLOAD_IDENTITY_PROVIDER: 
+  
+
+
+
+  
 #
 # Service Account has these roles:
 # - roles/run.admin (Cloud Run Admin)
