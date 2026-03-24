@@ -71,6 +71,10 @@ class Settings(BaseSettings):
     RATE_LIMIT_CALCULATE_TERMS: int = 10
     RATE_LIMIT_APPLY: int = 5
     RATE_LIMIT_BATCH: int = 2
+
+    # Student application logging
+    STUDENT_APP_LOGGING_ENABLED: bool = True
+    STUDENT_APPLICATIONS_COLLECTION: str = "student_applications"
     
     model_config = {
         "env_file": ".env",

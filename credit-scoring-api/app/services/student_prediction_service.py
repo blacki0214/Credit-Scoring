@@ -138,8 +138,12 @@ class StudentPredictionService:
         Returns:
             (default_probability, risk_level, credit_score)
         """
+        if self._model is None:
+            raise RuntimeError("Student model is not loaded")
+
+        model = self._model
         features = self._engineer(raw)
-        prob = float(self._model.predict_proba(features)[0][1])
+        prob = float(model.predict_proba(features)[0][1])
 
         if prob < 0.25:
             risk = "Low"

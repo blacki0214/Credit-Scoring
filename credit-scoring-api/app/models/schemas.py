@@ -207,6 +207,44 @@ class LoanLimitResponse(BaseModel):
         }
 
 
+class StudentLoanLimitResponse(LoanLimitResponse):
+    """Response for /api/student/calculate-limit with student-specific scoring details."""
+
+    default_probability: Optional[float] = Field(
+        None,
+        description="Model-predicted default probability for student profile (0-1).",
+        ge=0,
+        le=1,
+    )
+    approval_threshold: float = Field(
+        0.45,
+        description="Approval cutoff: approved when default_probability < approval_threshold.",
+    )
+    score_model: str = Field(
+        "student_xgboost_phase1",
+        description="Model family used for student scoring.",
+    )
+    score_range: str = Field(
+        "600-850",
+        description="Credit score scale used by student score mapper.",
+    )
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "credit_score": 706,
+                "loan_limit_vnd": 8000000,
+                "risk_level": "Medium",
+                "approved": True,
+                "message": "Điểm tín dụng: 706. good student profile — student loan range 5M–10M VND. Hạn mức vay: 8,000,000 VND.",
+                "default_probability": 0.22,
+                "approval_threshold": 0.45,
+                "score_model": "student_xgboost_phase1",
+                "score_range": "600-850",
+            }
+        }
+
+
 class LoanTermsRequest(BaseModel):
     """Request for /api/calculate-terms endpoint (Step 2)"""
     

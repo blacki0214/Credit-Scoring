@@ -19,3 +19,4 @@ setup-*.ps1
 fix-*.ps1
 *-key.json
 github-actions-key.json
+docs/plans_3.md

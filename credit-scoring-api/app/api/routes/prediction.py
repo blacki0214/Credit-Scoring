@@ -3,7 +3,7 @@ from app.models.schemas import (
     PredictionRequest, PredictionResponse, LoanOfferResponse,
     SimpleLoanRequest, CreditScoreResponse, SimpleLoanApplicationResponse,
     LoanLimitResponse, LoanTermsRequest, LoanTermsResponse,
-    StudentLoanRequest,
+    StudentLoanRequest, StudentLoanLimitResponse,
 )
 from app.services.prediction_service import prediction_service
 from app.services.loan_offer_service import loan_offer_service
@@ -14,6 +14,7 @@ from app.services.loan_limit_calculator import loan_limit_calculator
 from app.services.loan_terms_calculator import loan_terms_calculator
 from app.services.score_mapper import probability_to_credit_score
 from app.services.student_prediction_service import student_prediction_service
+from app.services.student_application_logger import student_application_logger
 from app.core.security import verify_api_key
 from app.auth.firebase_auth import verify_firebase_token
 from app.core.config import settings
@@ -645,7 +646,7 @@ async def calculate_credit_score(
 # Student Alternative Model Endpoint
 # ─────────────────────────────────────────────────────────────────────────────
 
-@router.post("/student/calculate-limit", response_model=LoanLimitResponse, status_code=status.HTTP_200_OK)
+@router.post("/student/calculate-limit", response_model=StudentLoanLimitResponse, status_code=status.HTTP_200_OK)
 @limiter.limit(f"{settings.RATE_LIMIT_CALCULATE_LIMIT}/minute")
 async def student_calculate_limit(
     request: Request,
@@ -673,10 +674,29 @@ async def student_calculate_limit(
 
     try:
         logger.info(f"Student loan request — user: {user.get('uid', 'unknown')}")
+        user_id = user.get("uid", "unknown")
+        raw = application.model_dump()
 
         # ── Hard gate: Year-1 + low GPA ────────────────────────────────────
         if application.academic_year == 1 and application.gpa_latest < 2.0:
-            return LoanLimitResponse(
+            try:
+                student_application_logger.log_application(
+                    user_id=user_id,
+                    request_payload=raw,
+                    credit_score=600,
+                    loan_limit_vnd=0.0,
+                    risk_level="Very High",
+                    approved=False,
+                    model_score=None,
+                    status="rejected",
+                    reason="hard_gate_year1_low_gpa",
+                )
+            except Exception as log_error:
+                logger.warning(
+                    "Student application logging failed for hard gate: %s", log_error
+                )
+
+            return StudentLoanLimitResponse(
                 credit_score=600,
                 loan_limit_vnd=0.0,
                 risk_level="Very High",
@@ -685,10 +705,13 @@ async def student_calculate_limit(
                     "Sinh viên năm nhất cần GPA ≥ 2.0 để đủ điều kiện vay. "
                     "Hãy cải thiện kết quả học tập và thử lại."
                 ),
+                default_probability=None,
+                approval_threshold=DEFAULT_STUDENT_THRESHOLD,
+                score_model="student_xgboost_phase1",
+                score_range="600-850",
             )
 
         # ── Model prediction ────────────────────────────────────────────────
-        raw = application.model_dump()
         default_prob, risk_level, credit_score = student_prediction_service.predict(raw)
 
         # ── Loan limit (5M–10M hard cap) ────────────────────────────────────
@@ -712,17 +735,35 @@ async def student_calculate_limit(
                 f"Hạn mức vay: {loan_limit:,.0f} VND."
             )
 
+        try:
+            student_application_logger.log_application(
+                user_id=user_id,
+                request_payload=raw,
+                credit_score=credit_score,
+                loan_limit_vnd=loan_limit,
+                risk_level=risk_level,
+                approved=approved,
+                model_score=default_prob,
+                status="scored",
+            )
+        except Exception as log_error:
+            logger.warning("Student application logging failed: %s", log_error)
+
         logger.info(
             f"Student loan calculated — score={credit_score}, "
             f"limit={loan_limit:,.0f} VND, risk={risk_level}, approved={approved}"
         )
 
-        return LoanLimitResponse(
+        return StudentLoanLimitResponse(
             credit_score=credit_score,
             loan_limit_vnd=loan_limit,
             risk_level=risk_level,
             approved=approved,
             message=message,
+            default_probability=default_prob,
+            approval_threshold=DEFAULT_STUDENT_THRESHOLD,
+            score_model="student_xgboost_phase1",
+            score_range="600-850",
         )
 
     except Exception as e:

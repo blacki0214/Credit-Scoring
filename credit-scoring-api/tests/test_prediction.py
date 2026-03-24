@@ -3,6 +3,9 @@ from fastapi.testclient import TestClient
 from app.main import app
 from app.models.schemas import PredictionRequest
 from app.auth.firebase_auth import verify_firebase_token
+from app.services.student_prediction_service import student_prediction_service
+from app.services.student_application_logger import student_application_logger
+from app.services.loan_limit_calculator import loan_limit_calculator
 
 # Override Firebase token verification for all tests — no real token needed
 app.dependency_overrides[verify_firebase_token] = lambda: {"uid": "test-user", "email": "test@example.com"}
@@ -219,3 +222,159 @@ class TestCalculateLimitEndpoint:
         assert low_score > high_score, (
             f"Low-risk score ({low_score}) should be greater than high-risk score ({high_score})"
         )
+
+
+class TestStudentCalculateLimitEndpoint:
+    """Integration tests for /student/calculate-limit behavior and logging."""
+
+    @pytest.fixture
+    def valid_student_application(self):
+        return {
+            "gpa_latest": 3.6,
+            "academic_year": 3,
+            "major": "technology",
+            "program_level": "undergraduate",
+            "loan_amount": 8000000,
+            "living_status": "dormitory",
+            "has_buffer": True,
+            "support_sources": ["family", "part_time"],
+            "monthly_income": 2500000,
+            "monthly_expenses": 3000000,
+        }
+
+    @pytest.fixture
+    def force_student_model_ready(self, monkeypatch):
+        monkeypatch.setattr(
+            type(student_prediction_service),
+            "is_ready",
+            property(lambda self: True),
+        )
+
+    def test_student_hard_gate_rejected_and_logged(self, force_student_model_ready, monkeypatch):
+        calls = []
+
+        def capture_log(**kwargs):
+            calls.append(kwargs)
+            return "doc-1"
+
+        monkeypatch.setattr(student_application_logger, "log_application", capture_log)
+
+        payload = {
+            "gpa_latest": 1.8,
+            "academic_year": 1,
+            "major": "other",
+            "program_level": "undergraduate",
+            "loan_amount": 5000000,
+            "living_status": "dormitory",
+            "has_buffer": False,
+            "support_sources": [],
+        }
+
+        response = client.post("/api/student/calculate-limit", json=payload)
+        assert response.status_code == 200
+        data = response.json()
+        assert data["approved"] is False
+        assert data["credit_score"] == 600
+        assert data["loan_limit_vnd"] == 0.0
+        assert data["score_model"] == "student_xgboost_phase1"
+        assert data["score_range"] == "600-850"
+        assert data["default_probability"] is None
+        assert len(calls) == 1
+        assert calls[0]["status"] == "rejected"
+        assert calls[0]["reason"] == "hard_gate_year1_low_gpa"
+
+    def test_student_low_risk_approved(self, valid_student_application, force_student_model_ready, monkeypatch):
+        captured = {}
+
+        monkeypatch.setattr(
+            student_prediction_service,
+            "predict",
+            lambda raw: (0.2, "Low", 760),
+        )
+        monkeypatch.setattr(
+            loan_limit_calculator,
+            "calculate_student_loan",
+            lambda credit_score, risk_level: (10000000, "Approved up to maximum tier"),
+        )
+
+        def capture_log(**kwargs):
+            captured.update(kwargs)
+            return "doc-2"
+
+        monkeypatch.setattr(student_application_logger, "log_application", capture_log)
+
+        response = client.post("/api/student/calculate-limit", json=valid_student_application)
+        assert response.status_code == 200
+        data = response.json()
+        assert data["approved"] is True
+        assert data["loan_limit_vnd"] == 10000000
+        assert data["default_probability"] == 0.2
+        assert data["approval_threshold"] == 0.45
+        assert captured["status"] == "scored"
+        assert captured["model_score"] == 0.2
+
+    def test_student_high_risk_not_approved_limit_zero(self, valid_student_application, force_student_model_ready, monkeypatch):
+        monkeypatch.setattr(
+            student_prediction_service,
+            "predict",
+            lambda raw: (0.7, "High", 620),
+        )
+        monkeypatch.setattr(
+            loan_limit_calculator,
+            "calculate_student_loan",
+            lambda credit_score, risk_level: (5000000, "Risk cap applied"),
+        )
+        monkeypatch.setattr(
+            student_application_logger,
+            "log_application",
+            lambda **kwargs: "doc-3",
+        )
+
+        response = client.post("/api/student/calculate-limit", json=valid_student_application)
+        assert response.status_code == 200
+        data = response.json()
+        assert data["approved"] is False
+        assert data["loan_limit_vnd"] == 0.0
+
+    def test_student_loan_amount_validation(self, force_student_model_ready):
+        invalid_payload = {
+            "gpa_latest": 3.0,
+            "academic_year": 2,
+            "major": "technology",
+            "program_level": "undergraduate",
+            "loan_amount": 4000000,
+            "living_status": "dormitory",
+            "has_buffer": True,
+            "support_sources": ["family"],
+        }
+
+        response = client.post("/api/student/calculate-limit", json=invalid_payload)
+        assert response.status_code == 422
+
+    def test_student_logging_failure_does_not_break_response(
+        self,
+        valid_student_application,
+        force_student_model_ready,
+        monkeypatch,
+    ):
+        monkeypatch.setattr(
+            student_prediction_service,
+            "predict",
+            lambda raw: (0.22, "Low", 745),
+        )
+        monkeypatch.setattr(
+            loan_limit_calculator,
+            "calculate_student_loan",
+            lambda credit_score, risk_level: (8000000, "Standard tier"),
+        )
+
+        def fail_log(**kwargs):
+            raise RuntimeError("firestore unavailable")
+
+        monkeypatch.setattr(student_application_logger, "log_application", fail_log)
+
+        response = client.post("/api/student/calculate-limit", json=valid_student_application)
+        assert response.status_code == 200
+        data = response.json()
+        assert data["approved"] is True
+        assert data["credit_score"] == 745
