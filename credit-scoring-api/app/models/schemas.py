@@ -418,6 +418,47 @@ class StudentLoanRequest(BaseModel):
         }
 
 
+class StudentCreditScoreResponse(BaseModel):
+    """Response for /api/student/credit-score endpoint."""
+
+    credit_score: int = Field(..., description="Calculated student credit score (600-850)")
+    risk_level: str = Field(..., description="Risk level (Low, Medium, High, Very High)")
+    approved: bool = Field(..., description="Whether score passes approval threshold")
+    message: str = Field(..., description="Explanation of score result")
+    default_probability: Optional[float] = Field(
+        None,
+        description="Model-predicted default probability for student profile (0-1).",
+        ge=0,
+        le=1,
+    )
+    approval_threshold: float = Field(
+        0.45,
+        description="Approval cutoff: approved when default_probability < approval_threshold.",
+    )
+    score_model: str = Field(
+        "student_xgboost_phase1",
+        description="Model family used for student scoring.",
+    )
+    score_range: str = Field(
+        "600-850",
+        description="Credit score scale used by student score mapper.",
+    )
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "credit_score": 706,
+                "risk_level": "Medium",
+                "approved": True,
+                "message": "Điểm tín dụng sinh viên: 706. Hồ sơ đang ở mức Medium risk.",
+                "default_probability": 0.22,
+                "approval_threshold": 0.45,
+                "score_model": "student_xgboost_phase1",
+                "score_range": "600-850",
+            }
+        }
+
+
 class ModelInfoResponse(BaseModel):
 
     """Response schema for model information"""

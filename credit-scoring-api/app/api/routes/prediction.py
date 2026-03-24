@@ -3,7 +3,7 @@ from app.models.schemas import (
     PredictionRequest, PredictionResponse, LoanOfferResponse,
     SimpleLoanRequest, CreditScoreResponse, SimpleLoanApplicationResponse,
     LoanLimitResponse, LoanTermsRequest, LoanTermsResponse,
-    StudentLoanRequest, StudentLoanLimitResponse,
+    StudentLoanRequest, StudentLoanLimitResponse, StudentCreditScoreResponse,
 )
 from app.services.prediction_service import prediction_service
 from app.services.loan_offer_service import loan_offer_service
@@ -645,6 +645,70 @@ async def calculate_credit_score(
 # ─────────────────────────────────────────────────────────────────────────────
 # Student Alternative Model Endpoint
 # ─────────────────────────────────────────────────────────────────────────────
+
+@router.post("/student/credit-score", response_model=StudentCreditScoreResponse, status_code=status.HTTP_200_OK)
+@limiter.limit(f"{settings.RATE_LIMIT_CALCULATE_LIMIT}/minute")
+async def student_credit_score(
+    request: Request,
+    application: StudentLoanRequest,
+    user: dict = Depends(verify_firebase_token),
+):
+    """
+    Student Credit Score Endpoint.
+
+    Returns only student scoring result (no loan limit calculation).
+    """
+    if not student_prediction_service.is_ready:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Student model not loaded. Please contact support.",
+        )
+
+    try:
+        logger.info(f"Student credit score request — user: {user.get('uid', 'unknown')}")
+
+        # Hard gate aligned with student loan policy
+        if application.academic_year == 1 and application.gpa_latest < 2.0:
+            return StudentCreditScoreResponse(
+                credit_score=600,
+                risk_level="Very High",
+                approved=False,
+                message=(
+                    "Sinh viên năm nhất cần GPA ≥ 2.0 để đủ điều kiện. "
+                    "Hãy cải thiện kết quả học tập và thử lại."
+                ),
+                default_probability=None,
+                approval_threshold=DEFAULT_STUDENT_THRESHOLD,
+                score_model="student_xgboost_phase1",
+                score_range="600-850",
+            )
+
+        raw = application.model_dump()
+        default_prob, risk_level, credit_score = student_prediction_service.predict(raw)
+        approved = default_prob < DEFAULT_STUDENT_THRESHOLD
+
+        message = (
+            f"Điểm tín dụng sinh viên: {credit_score}. "
+            f"Mức rủi ro: {risk_level}."
+        )
+
+        return StudentCreditScoreResponse(
+            credit_score=credit_score,
+            risk_level=risk_level,
+            approved=approved,
+            message=message,
+            default_probability=default_prob,
+            approval_threshold=DEFAULT_STUDENT_THRESHOLD,
+            score_model="student_xgboost_phase1",
+            score_range="600-850",
+        )
+
+    except Exception as e:
+        logger.error(f"Student credit score calculation error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Student credit score calculation failed: {str(e)}",
+        )
 
 @router.post("/student/calculate-limit", response_model=StudentLoanLimitResponse, status_code=status.HTTP_200_OK)
 @limiter.limit(f"{settings.RATE_LIMIT_CALCULATE_LIMIT}/minute")

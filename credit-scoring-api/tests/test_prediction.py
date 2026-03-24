@@ -378,3 +378,67 @@ class TestStudentCalculateLimitEndpoint:
         data = response.json()
         assert data["approved"] is True
         assert data["credit_score"] == 745
+
+
+class TestStudentCreditScoreEndpoint:
+    """Integration tests for /api/student/credit-score endpoint."""
+
+    @pytest.fixture
+    def valid_student_application(self):
+        return {
+            "gpa_latest": 3.5,
+            "academic_year": 3,
+            "major": "technology",
+            "program_level": "undergraduate",
+            "loan_amount": 7000000,
+            "living_status": "dormitory",
+            "has_buffer": True,
+            "support_sources": ["family"],
+            "monthly_income": 2000000,
+            "monthly_expenses": 2500000,
+        }
+
+    @pytest.fixture
+    def force_student_model_ready(self, monkeypatch):
+        monkeypatch.setattr(
+            type(student_prediction_service),
+            "is_ready",
+            property(lambda self: True),
+        )
+
+    def test_student_credit_score_success(self, valid_student_application, force_student_model_ready, monkeypatch):
+        monkeypatch.setattr(
+            student_prediction_service,
+            "predict",
+            lambda raw: (0.21, "Low", 752),
+        )
+
+        response = client.post("/api/student/credit-score", json=valid_student_application)
+        assert response.status_code == 200
+        data = response.json()
+        assert data["credit_score"] == 752
+        assert data["risk_level"] == "Low"
+        assert data["approved"] is True
+        assert data["default_probability"] == 0.21
+        assert data["approval_threshold"] == 0.45
+        assert data["score_model"] == "student_xgboost_phase1"
+
+    def test_student_credit_score_hard_gate(self, force_student_model_ready):
+        payload = {
+            "gpa_latest": 1.7,
+            "academic_year": 1,
+            "major": "other",
+            "program_level": "undergraduate",
+            "loan_amount": 5000000,
+            "living_status": "dormitory",
+            "has_buffer": False,
+            "support_sources": [],
+        }
+
+        response = client.post("/api/student/credit-score", json=payload)
+        assert response.status_code == 200
+        data = response.json()
+        assert data["credit_score"] == 600
+        assert data["risk_level"] == "Very High"
+        assert data["approved"] is False
+        assert data["default_probability"] is None
