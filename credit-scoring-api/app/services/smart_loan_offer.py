@@ -1,7 +1,7 @@
 import logging
 import math
 import pandas as pd
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from app.services.loan_limit_calculator import loan_limit_calculator
 from app.services.loan_terms_calculator import loan_terms_calculator
 from app.services.feature_engineering import FeatureEngineer
@@ -25,10 +25,10 @@ class SmartLoanOfferService:
         years_employed: float,
         employment_status: str,
         home_ownership: str,
-        loan_purpose: str = None,  # Now optional - only needed for interest rate calculation
-        annual_income_vnd: float = None,
-        monthly_income_vnd: float = None,
-        credit_score: int = None
+        loan_purpose: Optional[str] = None,  # Now optional - only needed for interest rate calculation
+        annual_income_vnd: Optional[float] = None,
+        monthly_income_vnd: Optional[float] = None,
+        credit_score: Optional[int] = None
     ) -> Dict[str, Any]:
         """
         Generate smart loan offer with automatic loan limit calculation.

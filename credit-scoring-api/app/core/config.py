@@ -17,6 +17,9 @@ class Settings(BaseSettings):
     # Security
     SECRET_KEY: str = secrets.token_urlsafe(32)  # Auto-generate if not in .env
     API_KEY: str = ""  # REQUIRED in .env for production
+    DEMO_AUTH_BYPASS_ENABLED: bool = False
+    DEMO_AUTH_BYPASS_USER_ID: str = "demo-user"
+    DEMO_AUTH_BYPASS_EMAIL: str = "demo@example.com"
     
     # CORS - Restrict to specific origins (NO wildcard in production)
     # Can be comma-separated string in .env: "http://localhost:3000,http://localhost:5173"
@@ -75,6 +78,10 @@ class Settings(BaseSettings):
     # Student application logging
     STUDENT_APP_LOGGING_ENABLED: bool = True
     STUDENT_APPLICATIONS_COLLECTION: str = "student_applications"
+    STUDENT_MANUAL_REVIEW_MARGIN: float = 0.05
+    STUDENT_SCORING_REFERENCE_LOAN_AMOUNT: int = 5_000_000
+    STUDENT_CALIBRATION_ENABLED: bool = True
+    STUDENT_CALIBRATOR_FILENAME: str = "student_calibrator_isotonic.pkl"
     
     model_config = {
         "env_file": ".env",

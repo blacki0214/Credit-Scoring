@@ -41,6 +41,7 @@ class StudentApplicationLogger:
         model_score: Optional[float],
         status: str,
         reason: Optional[str] = None,
+        manual_review: Optional[bool] = None,
     ) -> Optional[str]:
         """Write a student application record and return document id."""
         if not settings.STUDENT_APP_LOGGING_ENABLED:
@@ -51,12 +52,12 @@ class StudentApplicationLogger:
             raise RuntimeError("Firestore client is not available")
         collection = settings.STUDENT_APPLICATIONS_COLLECTION
 
-        manual_review = (
-            model_score is not None and 0.35 <= model_score <= 0.55
-        )
+        if manual_review is None:
+            manual_review = model_score is not None and 0.35 <= model_score <= 0.55
 
         doc = {
             "userId": user_id,
+            "age": request_payload.get("age"),
             "gpa_latest": request_payload.get("gpa_latest"),
             "academic_year": request_payload.get("academic_year"),
             "major": request_payload.get("major", "other"),

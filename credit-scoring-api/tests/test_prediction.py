@@ -230,6 +230,7 @@ class TestStudentCalculateLimitEndpoint:
     @pytest.fixture
     def valid_student_application(self):
         return {
+            "age": 21,
             "gpa_latest": 3.6,
             "academic_year": 3,
             "major": "technology",
@@ -260,11 +261,11 @@ class TestStudentCalculateLimitEndpoint:
         monkeypatch.setattr(student_application_logger, "log_application", capture_log)
 
         payload = {
+            "age": 18,
             "gpa_latest": 1.8,
             "academic_year": 1,
             "major": "other",
             "program_level": "undergraduate",
-            "loan_amount": 5000000,
             "living_status": "dormitory",
             "has_buffer": False,
             "support_sources": [],
@@ -279,6 +280,8 @@ class TestStudentCalculateLimitEndpoint:
         assert data["score_model"] == "student_xgboost_phase1"
         assert data["score_range"] == "600-850"
         assert data["default_probability"] is None
+        assert data["decision_band"] == "auto_reject"
+        assert data["manual_review"] is False
         assert len(calls) == 1
         assert calls[0]["status"] == "rejected"
         assert calls[0]["reason"] == "hard_gate_year1_low_gpa"
@@ -309,7 +312,9 @@ class TestStudentCalculateLimitEndpoint:
         assert data["approved"] is True
         assert data["loan_limit_vnd"] == 10000000
         assert data["default_probability"] == 0.2
-        assert data["approval_threshold"] == 0.45
+        assert data["approval_threshold"] == student_prediction_service.threshold
+        assert data["decision_band"] == "auto_approve"
+        assert data["manual_review"] is False
         assert captured["status"] == "scored"
         assert captured["model_score"] == 0.2
 
@@ -335,21 +340,68 @@ class TestStudentCalculateLimitEndpoint:
         data = response.json()
         assert data["approved"] is False
         assert data["loan_limit_vnd"] == 0.0
+        assert data["decision_band"] == "auto_reject"
+        assert data["manual_review"] is False
 
-    def test_student_loan_amount_validation(self, force_student_model_ready):
-        invalid_payload = {
+    def test_student_manual_review_band(self, valid_student_application, force_student_model_ready, monkeypatch):
+        review_prob = student_prediction_service.threshold
+        monkeypatch.setattr(
+            student_prediction_service,
+            "predict",
+            lambda raw: (review_prob, "Medium", 700),
+        )
+        monkeypatch.setattr(
+            loan_limit_calculator,
+            "calculate_student_loan",
+            lambda credit_score, risk_level: (8000000, "Standard tier"),
+        )
+        monkeypatch.setattr(
+            student_application_logger,
+            "log_application",
+            lambda **kwargs: "doc-review",
+        )
+
+        response = client.post("/api/student/calculate-limit", json=valid_student_application)
+        assert response.status_code == 200
+        data = response.json()
+        assert data["approved"] is False
+        assert data["decision_band"] == "manual_review"
+        assert data["manual_review"] is True
+        assert data["loan_limit_vnd"] == 0.0
+
+    def test_student_without_loan_amount_still_works(self, force_student_model_ready, monkeypatch):
+        monkeypatch.setattr(
+            student_prediction_service,
+            "predict",
+            lambda raw: (0.2, "Low", 760),
+        )
+        monkeypatch.setattr(
+            loan_limit_calculator,
+            "calculate_student_loan",
+            lambda credit_score, risk_level: (10000000, "Approved up to maximum tier"),
+        )
+        monkeypatch.setattr(
+            student_application_logger,
+            "log_application",
+            lambda **kwargs: "doc-no-loan-amount",
+        )
+
+        payload = {
+            "age": 20,
             "gpa_latest": 3.0,
             "academic_year": 2,
             "major": "technology",
             "program_level": "undergraduate",
-            "loan_amount": 4000000,
             "living_status": "dormitory",
             "has_buffer": True,
             "support_sources": ["family"],
         }
 
-        response = client.post("/api/student/calculate-limit", json=invalid_payload)
-        assert response.status_code == 422
+        response = client.post("/api/student/calculate-limit", json=payload)
+        assert response.status_code == 200
+        data = response.json()
+        assert data["approved"] is True
+        assert data["loan_limit_vnd"] == 10000000
 
     def test_student_logging_failure_does_not_break_response(
         self,
@@ -386,6 +438,7 @@ class TestStudentCreditScoreEndpoint:
     @pytest.fixture
     def valid_student_application(self):
         return {
+            "age": 22,
             "gpa_latest": 3.5,
             "academic_year": 3,
             "major": "technology",
@@ -420,16 +473,18 @@ class TestStudentCreditScoreEndpoint:
         assert data["risk_level"] == "Low"
         assert data["approved"] is True
         assert data["default_probability"] == 0.21
-        assert data["approval_threshold"] == 0.45
+        assert data["approval_threshold"] == student_prediction_service.threshold
         assert data["score_model"] == "student_xgboost_phase1"
+        assert data["decision_band"] == "auto_approve"
+        assert data["manual_review"] is False
 
     def test_student_credit_score_hard_gate(self, force_student_model_ready):
         payload = {
+            "age": 18,
             "gpa_latest": 1.7,
             "academic_year": 1,
             "major": "other",
             "program_level": "undergraduate",
-            "loan_amount": 5000000,
             "living_status": "dormitory",
             "has_buffer": False,
             "support_sources": [],
@@ -442,3 +497,5 @@ class TestStudentCreditScoreEndpoint:
         assert data["risk_level"] == "Very High"
         assert data["approved"] is False
         assert data["default_probability"] is None
+        assert data["decision_band"] == "auto_reject"
+        assert data["manual_review"] is False

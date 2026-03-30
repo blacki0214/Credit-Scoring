@@ -22,14 +22,13 @@ RUN pip install --no-cache-dir --upgrade pip && \
 COPY app/ ./app/
 COPY models/ ./models/
 
-# Cloud Run uses PORT environment variable (default 8080)
-# But we'll make it flexible
-ENV PORT=8080
-EXPOSE ${PORT}
+# Local default port (can be overridden at runtime, e.g. PORT=8080 for Cloud Run)
+ENV PORT=8000
+EXPOSE 8000
 
 # Health check - Use environment variable for port
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD curl -f http://localhost:${PORT}/api/health || exit 1
 
-# Run application - Use PORT env variable for Cloud Run compatibility
-CMD exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT} --workers 1
+# Run application with configurable PORT
+CMD ["sh", "-c", "exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT} --workers 1"]

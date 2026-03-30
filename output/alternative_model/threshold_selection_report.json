@@ -1,0 +1,72 @@
+{
+  "model": "student_xgboost_phase1",
+  "dataset": "output/alternative_model/X_test.csv",
+  "rows": 1500,
+  "base_metrics": {
+    "auc_default": 0.7181703644639872,
+    "average_precision_default": 0.5593240351931936,
+    "brier_score": 0.20156575262899115
+  },
+  "policy": {
+    "max_bad_approve_rate": 0.25,
+    "selection_rule": "max_recall_under_bad_approve_cap_else_max_f1"
+  },
+  "current_threshold": {
+    "threshold": 0.36232858896255493,
+    "approve_rate": 0.4073333333333333,
+    "precision_approve": 0.8248772504091653,
+    "recall_approve": 0.5228215767634855,
+    "f1_approve": 0.64,
+    "bad_approve_rate": 0.17512274959083474
+  },
+  "recommended_threshold": {
+    "threshold": 0.47,
+    "approve_rate": 0.6166666666666667,
+    "precision_approve": 0.7513513513513513,
+    "recall_approve": 0.720954356846473,
+    "f1_approve": 0.7358390682901006,
+    "bad_approve_rate": 0.24864864864864866
+  },
+  "top_candidates": [
+    {
+      "threshold": 0.75,
+      "approve_rate": 1.0,
+      "precision_approve": 0.6426666666666667,
+      "recall_approve": 1.0,
+      "f1_approve": 0.7824675324675324,
+      "bad_approve_rate": 0.3573333333333333
+    },
+    {
+      "threshold": 0.76,
+      "approve_rate": 1.0,
+      "precision_approve": 0.6426666666666667,
+      "recall_approve": 1.0,
+      "f1_approve": 0.7824675324675324,
+      "bad_approve_rate": 0.3573333333333333
+    },
+    {
+      "threshold": 0.77,
+      "approve_rate": 1.0,
+      "precision_approve": 0.6426666666666667,
+      "recall_approve": 1.0,
+      "f1_approve": 0.7824675324675324,
+      "bad_approve_rate": 0.3573333333333333
+    },
+    {
+      "threshold": 0.78,
+      "approve_rate": 1.0,
+      "precision_approve": 0.6426666666666667,
+      "recall_approve": 1.0,
+      "f1_approve": 0.7824675324675324,
+      "bad_approve_rate": 0.3573333333333333
+    },
+    {
+      "threshold": 0.79,
+      "approve_rate": 1.0,
+      "precision_approve": 0.6426666666666667,
+      "recall_approve": 1.0,
+      "f1_approve": 0.7824675324675324,
+      "bad_approve_rate": 0.3573333333333333
+    }
+  ]
+}

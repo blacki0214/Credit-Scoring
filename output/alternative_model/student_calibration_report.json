@@ -1,0 +1,23 @@
+{
+  "calibrator": "isotonic",
+  "fit_split": "val",
+  "eval_split": "test",
+  "raw": {
+    "auc_default": 0.7181703644639872,
+    "brier": 0.20156575262899115,
+    "prob_mean": 0.40412434935569763,
+    "prob_p50": 0.4063225984573364,
+    "prob_p95": 0.6726983904838562
+  },
+  "calibrated": {
+    "auc_default": 0.7170991515451787,
+    "brier": 0.2009764472992508,
+    "prob_mean": 0.36071476340293884,
+    "prob_p50": 0.34437087178230286,
+    "prob_p95": 0.6056337952613831
+  },
+  "delta": {
+    "brier_improvement": 0.0005893053297403583
+  },
+  "output_calibrator": "D:\\Project_A\\Credit-Scoring\\output\\alternative_model\\student_calibrator_isotonic.pkl"
+}

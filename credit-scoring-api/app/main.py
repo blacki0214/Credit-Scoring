@@ -7,6 +7,7 @@ from app.api.routes import router as api_router
 from app.core.config import settings
 from app.core.logging import setup_logging
 from app.core.security import get_client_ip
+from app.services.student_prediction_service import student_prediction_service
 import logging
 
 logger = logging.getLogger(__name__)
@@ -63,4 +64,20 @@ async def startup_event():
     logger.info(f"Environment: {settings.ENVIRONMENT}")
     logger.info(f"CORS allowed origins: {settings.allowed_origins_list}")
     logger.info(f"API authentication: {'Enabled' if settings.API_KEY else 'Disabled (dev mode)'}")
+    strict_student_preflight = settings.ENVIRONMENT == "production"
+    student_preflight = student_prediction_service.validate_runtime_assets(
+        strict=strict_student_preflight
+    )
+    if student_preflight["ok"]:
+        logger.info("Student model preflight: OK")
+    else:
+        logger.warning(
+            "Student model preflight issues: %s",
+            student_preflight["issues"],
+        )
+    if student_preflight["warnings"]:
+        logger.warning(
+            "Student model preflight warnings: %s",
+            student_preflight["warnings"],
+        )
     logger.info(f"Rate limiting: Enabled")

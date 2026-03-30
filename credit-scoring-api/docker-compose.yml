@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   credit-scoring-api:
     build: .
@@ -7,13 +5,16 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - ENVIRONMENT=production
+      - PORT=8000
+      - ENVIRONMENT=development
       - LOG_LEVEL=INFO
+      - DEMO_AUTH_BYPASS_ENABLED=true
     volumes:
       - ./models:/app/models:ro  # Read-only models
+      - ../output:/output:ro     # Student alternative model artifacts
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "https://credit-scoring-h7mv.onrender.com/docs#/Health/health_check_api_health_get"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
       interval: 30s
       timeout: 10s
       retries: 3

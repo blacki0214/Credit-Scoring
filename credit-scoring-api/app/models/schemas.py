@@ -228,6 +228,14 @@ class StudentLoanLimitResponse(LoanLimitResponse):
         "600-850",
         description="Credit score scale used by student score mapper.",
     )
+    decision_band: str = Field(
+        "auto_reject",
+        description="Decision policy band: auto_approve, manual_review, auto_reject.",
+    )
+    manual_review: bool = Field(
+        False,
+        description="Whether this application should be routed to manual review.",
+    )
 
     class Config:
         json_schema_extra = {
@@ -241,6 +249,8 @@ class StudentLoanLimitResponse(LoanLimitResponse):
                 "approval_threshold": 0.45,
                 "score_model": "student_xgboost_phase1",
                 "score_range": "600-850",
+                "decision_band": "auto_approve",
+                "manual_review": False,
             }
         }
 
@@ -356,6 +366,7 @@ class StudentLoanRequest(BaseModel):
     """Request for POST /api/student/calculate-limit (alternative model)."""
 
     # Academic
+    age: int = Field(..., description="Student age (16-40)", ge=16, le=40)
     gpa_latest: float = Field(..., description="Current GPA (0.0–4.0)", ge=0.0, le=4.0)
     academic_year: int = Field(..., description="Academic year (1–5)", ge=1, le=5)
     major: str = Field(
@@ -371,11 +382,12 @@ class StudentLoanRequest(BaseModel):
     )
 
     # Loan
-    loan_amount: int = Field(
-        ...,
-        description="Requested loan amount in VND (5,000,000–10,000,000)",
-        ge=5_000_000,
-        le=10_000_000,
+    loan_amount: Optional[int] = Field(
+        None,
+        description=(
+            "Legacy optional field. Student calculate-limit now returns maximum "
+            "eligible amount and does not depend on requested loan amount."
+        ),
     )
 
     # Living & support
@@ -404,6 +416,7 @@ class StudentLoanRequest(BaseModel):
     class Config:
         json_schema_extra = {
             "example": {
+                "age": 21,
                 "gpa_latest": 3.2,
                 "academic_year": 3,
                 "major": "technology",
@@ -443,6 +456,14 @@ class StudentCreditScoreResponse(BaseModel):
         "600-850",
         description="Credit score scale used by student score mapper.",
     )
+    decision_band: str = Field(
+        "auto_reject",
+        description="Decision policy band: auto_approve, manual_review, auto_reject.",
+    )
+    manual_review: bool = Field(
+        False,
+        description="Whether this application should be routed to manual review.",
+    )
 
     class Config:
         json_schema_extra = {
@@ -455,6 +476,8 @@ class StudentCreditScoreResponse(BaseModel):
                 "approval_threshold": 0.45,
                 "score_model": "student_xgboost_phase1",
                 "score_range": "600-850",
+                "decision_band": "auto_approve",
+                "manual_review": False,
             }
         }
 

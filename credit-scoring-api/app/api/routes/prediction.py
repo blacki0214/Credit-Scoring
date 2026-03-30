@@ -423,7 +423,12 @@ async def batch_loan_offers(
         # Process all loan offers
         offers = []
         for pred_request in prediction_requests:
-            offer = loan_offer_service.generate_offer(pred_request.model_dump())
+            prediction_result = prediction_service.predict(pred_request)
+            offer = loan_offer_service.calculate_offer(
+                request=pred_request,
+                probability=prediction_result.probability,
+                risk_level=prediction_result.risk_level,
+            )
             offers.append(offer)
         
         logger.info(f"Batch loan offers complete: {len(offers)} results")
@@ -678,19 +683,32 @@ async def student_credit_score(
                     "Hãy cải thiện kết quả học tập và thử lại."
                 ),
                 default_probability=None,
-                approval_threshold=DEFAULT_STUDENT_THRESHOLD,
+                approval_threshold=student_prediction_service.threshold,
                 score_model="student_xgboost_phase1",
                 score_range="600-850",
+                decision_band="auto_reject",
+                manual_review=False,
             )
 
         raw = application.model_dump()
+        # Student score is evaluated at a fixed reference amount so limit does not
+        # depend on requested loan input.
+        raw["loan_amount"] = settings.STUDENT_SCORING_REFERENCE_LOAN_AMOUNT
         default_prob, risk_level, credit_score = student_prediction_service.predict(raw)
-        approved = default_prob < DEFAULT_STUDENT_THRESHOLD
-
-        message = (
-            f"Điểm tín dụng sinh viên: {credit_score}. "
-            f"Mức rủi ro: {risk_level}."
+        decision_band, approved, manual_review = student_prediction_service.classify_decision_band(
+            default_prob
         )
+
+        if manual_review:
+            message = (
+                f"Điểm tín dụng sinh viên: {credit_score}. Mức rủi ro: {risk_level}. "
+                "Hồ sơ nằm gần ngưỡng duyệt và sẽ được thẩm định thủ công."
+            )
+        else:
+            message = (
+                f"Điểm tín dụng sinh viên: {credit_score}. "
+                f"Mức rủi ro: {risk_level}."
+            )
 
         return StudentCreditScoreResponse(
             credit_score=credit_score,
@@ -698,9 +716,11 @@ async def student_credit_score(
             approved=approved,
             message=message,
             default_probability=default_prob,
-            approval_threshold=DEFAULT_STUDENT_THRESHOLD,
+            approval_threshold=student_prediction_service.threshold,
             score_model="student_xgboost_phase1",
             score_range="600-850",
+            decision_band=decision_band,
+            manual_review=manual_review,
         )
 
     except Exception as e:
@@ -740,6 +760,9 @@ async def student_calculate_limit(
         logger.info(f"Student loan request — user: {user.get('uid', 'unknown')}")
         user_id = user.get("uid", "unknown")
         raw = application.model_dump()
+        # Student score is evaluated at a fixed reference amount so limit does not
+        # depend on requested loan input.
+        raw["loan_amount"] = settings.STUDENT_SCORING_REFERENCE_LOAN_AMOUNT
 
         # ── Hard gate: Year-1 + low GPA ────────────────────────────────────
         if application.academic_year == 1 and application.gpa_latest < 2.0:
@@ -754,6 +777,7 @@ async def student_calculate_limit(
                     model_score=None,
                     status="rejected",
                     reason="hard_gate_year1_low_gpa",
+                    manual_review=False,
                 )
             except Exception as log_error:
                 logger.warning(
@@ -770,9 +794,11 @@ async def student_calculate_limit(
                     "Hãy cải thiện kết quả học tập và thử lại."
                 ),
                 default_probability=None,
-                approval_threshold=DEFAULT_STUDENT_THRESHOLD,
+                approval_threshold=student_prediction_service.threshold,
                 score_model="student_xgboost_phase1",
                 score_range="600-850",
+                decision_band="auto_reject",
+                manual_review=False,
             )
 
         # ── Model prediction ────────────────────────────────────────────────
@@ -785,9 +811,18 @@ async def student_calculate_limit(
         )
 
         # ── Approval decision ───────────────────────────────────────────────
-        approved = default_prob < DEFAULT_STUDENT_THRESHOLD
+        decision_band, approved, manual_review = student_prediction_service.classify_decision_band(
+            default_prob
+        )
 
-        if not approved:
+        if decision_band == "manual_review":
+            message = (
+                f"Điểm tín dụng: {credit_score}. Xác suất rủi ro ({default_prob:.1%}) "
+                "nằm gần ngưỡng duyệt. Hồ sơ sẽ được thẩm định thủ công."
+            )
+            approved = False
+            loan_limit = 0.0
+        elif not approved:
             message = (
                 f"Điểm tín dụng: {credit_score}. Xác suất rủi ro ({default_prob:.1%}) "
                 f"vượt ngưỡng chấp nhận. Hạn mức: 0 VND."
@@ -796,7 +831,7 @@ async def student_calculate_limit(
         else:
             message = (
                 f"Điểm tín dụng: {credit_score}. {limit_reason}. "
-                f"Hạn mức vay: {loan_limit:,.0f} VND."
+                f"Hạn mức vay tối đa: {loan_limit:,.0f} VND."
             )
 
         try:
@@ -809,6 +844,7 @@ async def student_calculate_limit(
                 approved=approved,
                 model_score=default_prob,
                 status="scored",
+                manual_review=manual_review,
             )
         except Exception as log_error:
             logger.warning("Student application logging failed: %s", log_error)
@@ -825,9 +861,11 @@ async def student_calculate_limit(
             approved=approved,
             message=message,
             default_probability=default_prob,
-            approval_threshold=DEFAULT_STUDENT_THRESHOLD,
+            approval_threshold=student_prediction_service.threshold,
             score_model="student_xgboost_phase1",
             score_range="600-850",
+            decision_band=decision_band,
+            manual_review=manual_review,
         )
 
     except Exception as e:
@@ -836,7 +874,3 @@ async def student_calculate_limit(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Student loan calculation failed: {str(e)}",
         )
-
-
-# Approval threshold for student model (conservative)
-DEFAULT_STUDENT_THRESHOLD = 0.45
