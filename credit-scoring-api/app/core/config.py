@@ -82,6 +82,31 @@ class Settings(BaseSettings):
     STUDENT_SCORING_REFERENCE_LOAN_AMOUNT: int = 5_000_000
     STUDENT_CALIBRATION_ENABLED: bool = True
     STUDENT_CALIBRATOR_FILENAME: str = "student_calibrator_isotonic.pkl"
+    STUDENT_STARTUP_STRICT_PREFLIGHT: bool = False
+
+    @property
+    def STUDENT_MODEL_PATH(self) -> Path:
+        model_path = os.getenv("STUDENT_MODEL_PATH", "")
+        if model_path:
+            path = Path(model_path)
+            return path if path.is_absolute() else self.BASE_DIR / path
+        return self.BASE_DIR / "models" / "best_model_phase1.pkl"
+
+    @property
+    def STUDENT_THRESHOLD_PATH(self) -> Path:
+        threshold_path = os.getenv("STUDENT_THRESHOLD_PATH", "")
+        if threshold_path:
+            path = Path(threshold_path)
+            return path if path.is_absolute() else self.BASE_DIR / path
+        return self.BASE_DIR / "models" / "best_threshold_phase1.pkl"
+
+    @property
+    def STUDENT_CALIBRATOR_PATH(self) -> Path:
+        calibrator_path = os.getenv("STUDENT_CALIBRATOR_PATH", "")
+        if calibrator_path:
+            path = Path(calibrator_path)
+            return path if path.is_absolute() else self.BASE_DIR / path
+        return self.BASE_DIR / "models" / self.STUDENT_CALIBRATOR_FILENAME
     
     model_config = {
         "env_file": ".env",

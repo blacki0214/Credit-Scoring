@@ -46,16 +46,28 @@ class StudentPredictionService:
         # __file__ = .../credit-scoring-api/app/services/student_prediction_service.py
         # parent x3 = credit-scoring-api/
         # parent x4 = project root (Credit-Scoring/)
-        api_root    = Path(__file__).resolve().parent.parent.parent
+        api_root = Path(__file__).resolve().parent.parent.parent
         project_root = api_root.parent
-        model_path = project_root / "output" / "alternative_model" / "best_model_phase1.pkl"
-        threshold_path = project_root / "output" / "alternative_model" / "best_threshold_phase1.pkl"
-        calibrator_path = (
-            project_root
-            / "output"
-            / "alternative_model"
-            / settings.STUDENT_CALIBRATOR_FILENAME
-        )
+
+        model_candidates = [
+            settings.STUDENT_MODEL_PATH,
+            project_root / "output" / "alternative_model" / "best_model_phase1.pkl",
+            api_root / "models" / "best_model_phase1.pkl",
+        ]
+        threshold_candidates = [
+            settings.STUDENT_THRESHOLD_PATH,
+            project_root / "output" / "alternative_model" / "best_threshold_phase1.pkl",
+            api_root / "models" / "best_threshold_phase1.pkl",
+        ]
+        calibrator_candidates = [
+            settings.STUDENT_CALIBRATOR_PATH,
+            project_root / "output" / "alternative_model" / settings.STUDENT_CALIBRATOR_FILENAME,
+            api_root / "models" / settings.STUDENT_CALIBRATOR_FILENAME,
+        ]
+
+        model_path = next((p for p in model_candidates if p.exists()), model_candidates[0])
+        threshold_path = next((p for p in threshold_candidates if p.exists()), threshold_candidates[0])
+        calibrator_path = next((p for p in calibrator_candidates if p.exists()), calibrator_candidates[0])
         self._model_path = model_path
         self._threshold_path = threshold_path
         self._calibrator_path = calibrator_path

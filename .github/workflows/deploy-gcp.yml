@@ -87,7 +87,7 @@ jobs:
             --region ${{ env.REGION }} \
             --project ${{ env.PROJECT_ID }} \
             --allow-unauthenticated \
-            --set-env-vars "ENVIRONMENT=production,LOG_LEVEL=INFO,GCS_MODEL_BUCKET=mlretrain,GCS_MODEL_PREFIX=models/production" \
+            --set-env-vars "ENVIRONMENT=production,LOG_LEVEL=INFO,GCS_MODEL_BUCKET=mlretrain,GCS_MODEL_PREFIX=models/production,STUDENT_STARTUP_STRICT_PREFLIGHT=false" \
             --set-secrets "SECRET_KEY=credit-api-secret-key:latest,API_KEY=credit-api-key:latest" \
             --memory 2Gi \
             --cpu 2 \
