@@ -57,6 +57,11 @@ jobs:
       
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
+
+      - name: Derive Runtime Bucket
+        run: |
+          PROJECT_NUMBER=$(gcloud projects describe ${{ env.PROJECT_ID }} --format="value(projectNumber)")
+          echo "RETRAIN_BUCKET=credit-scoring-retrain-${PROJECT_NUMBER}" >> $GITHUB_ENV
       
       - name: Configure Docker for Artifact Registry
         run: |
@@ -87,7 +92,7 @@ jobs:
             --region ${{ env.REGION }} \
             --project ${{ env.PROJECT_ID }} \
             --allow-unauthenticated \
-            --set-env-vars "ENVIRONMENT=production,LOG_LEVEL=INFO,GCS_MODEL_BUCKET=mlretrain,GCS_MODEL_PREFIX=models/production,STUDENT_STARTUP_STRICT_PREFLIGHT=false" \
+            --set-env-vars "ENVIRONMENT=production,LOG_LEVEL=INFO,GCS_MODEL_BUCKET=$RETRAIN_BUCKET,GCS_MODEL_PREFIX=models/production,STUDENT_STARTUP_STRICT_PREFLIGHT=false" \
             --set-secrets "SECRET_KEY=credit-api-secret-key:latest,API_KEY=credit-api-key:latest" \
             --memory 2Gi \
             --cpu 2 \

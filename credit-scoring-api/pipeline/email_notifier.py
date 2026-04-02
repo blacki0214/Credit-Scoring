@@ -43,6 +43,7 @@ def generate_html_report(
     timestamp: str
 ) -> str:
     """Generate HTML email report"""
+    report_bucket = os.getenv('GCS_BUCKET', 'credit-scoring-retrain-513943636250')
     
     status_color = "#4CAF50" if promoted else "#FF9800"
     status_text = "✅ MODEL PROMOTED TO PRODUCTION" if promoted else "⚠️ MODEL SAVED TO STAGING (Not Promoted)"
@@ -154,7 +155,7 @@ def generate_html_report(
                     </tr>
                     <tr style="background-color: #f5f5f5;">
                         <td style="padding: 12px; border: 1px solid #ddd;"><strong>GCS Bucket</strong></td>
-                        <td style="padding: 12px; border: 1px solid #ddd;">credit-scoring-retrain-976448868286</td>
+                        <td style="padding: 12px; border: 1px solid #ddd;">{report_bucket}</td>
                     </tr>
                     <tr>
                         <td style="padding: 12px; border: 1px solid #ddd;"><strong>Model Location</strong></td>
@@ -165,7 +166,7 @@ def generate_html_report(
                 </table>
                 
                 <p style="margin-top: 20px;">
-                    <a href="https://console.cloud.google.com/storage/browser/credit-scoring-retrain-976448868286/models" 
+                    <a href="https://console.cloud.google.com/storage/browser/{report_bucket}/models" 
                        style="background-color: #2196F3; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">
                         📁 View Models in GCS
                     </a>

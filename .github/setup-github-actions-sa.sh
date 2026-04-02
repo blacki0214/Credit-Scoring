@@ -4,7 +4,11 @@
 
 set -e
 
-PROJECT_ID="project-71e73ad8-4a84-471e-b69"
+PROJECT_ID="${PROJECT_ID:-$(gcloud config get-value project 2>/dev/null)}"
+if [ -z "$PROJECT_ID" ] || [ "$PROJECT_ID" = "(unset)" ]; then
+  echo "Error: PROJECT_ID is not set. Set PROJECT_ID env var or run: gcloud config set project <YOUR_PROJECT_ID>"
+  exit 1
+fi
 SA_NAME="github-actions"
 SA_EMAIL="${SA_NAME}@${PROJECT_ID}.iam.gserviceaccount.com"
 

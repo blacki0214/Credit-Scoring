@@ -10,7 +10,7 @@ class PipelineConfig:
     """Retraining pipeline configuration"""
     
     # GCS Configuration
-    GCS_BUCKET = os.getenv('GCS_BUCKET', 'credit-scoring-retrain-976448868286')
+    GCS_BUCKET = os.getenv('GCS_BUCKET', 'credit-scoring-retrain-513943636250')
     GCS_DATA_PREFIX = 'data/exports'
     GCS_MODEL_STAGING = 'models/staging'
     GCS_MODEL_PRODUCTION = 'models/production'

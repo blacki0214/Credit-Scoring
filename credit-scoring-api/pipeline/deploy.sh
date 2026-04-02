@@ -4,6 +4,8 @@
 set -e
 
 PROJECT_ID=$(gcloud config get-value project)
+PROJECT_NUMBER=$(gcloud projects describe "${PROJECT_ID}" --format="value(projectNumber)")
+RETRAIN_BUCKET="credit-scoring-retrain-${PROJECT_NUMBER}"
 REGION="asia-southeast1"
 REPOSITORY="retrain-job"
 IMAGE_NAME="retrain-job"
@@ -14,6 +16,7 @@ echo "==============================================="
 echo "Deploying Model Retraining Pipeline"
 echo "==============================================="
 echo "Project: $PROJECT_ID"
+echo "Retrain bucket: $RETRAIN_BUCKET"
 echo "Region: $REGION"
 echo ""
 
@@ -31,7 +34,7 @@ echo "[2/3] Creating Cloud Run Job..."
 gcloud run jobs create retrain-job \
   --image "${IMAGE_URI}" \
   --region "${REGION}" \
-  --set-env-vars "GCS_BUCKET=credit-scoring-retrain-976448868286,MIN_SAMPLES=500,MIN_AUC_IMPROVEMENT=0.02,PROMOTION_THRESHOLD=0.86" \
+  --set-env-vars "GCS_BUCKET=${RETRAIN_BUCKET},MIN_SAMPLES=500,MIN_AUC_IMPROVEMENT=0.02,PROMOTION_THRESHOLD=0.86" \
   --memory 8Gi \
   --cpu 4 \
   --task-timeout 7200 \
@@ -41,7 +44,7 @@ gcloud run jobs create retrain-job \
 gcloud run jobs update retrain-job \
   --image "${IMAGE_URI}" \
   --region "${REGION}" \
-  --set-env-vars "GCS_BUCKET=credit-scoring-retrain-976448868286,MIN_SAMPLES=500,MIN_AUC_IMPROVEMENT=0.02,PROMOTION_THRESHOLD=0.86" \
+  --set-env-vars "GCS_BUCKET=${RETRAIN_BUCKET},MIN_SAMPLES=500,MIN_AUC_IMPROVEMENT=0.02,PROMOTION_THRESHOLD=0.86" \
   --memory 8Gi \
   --cpu 4 \
   --task-timeout 7200 \

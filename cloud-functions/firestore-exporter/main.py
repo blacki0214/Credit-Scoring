@@ -70,7 +70,7 @@ def export_firestore_to_gcs(request):
         db = firestore.Client()
         storage_client = storage.Client()
         # Allow bucket override per environment to support different projects.
-        export_bucket = os.getenv('GCS_EXPORT_BUCKET', 'mlretrain')
+        export_bucket = os.getenv('GCS_EXPORT_BUCKET', 'credit-scoring-retrain-513943636250')
         bucket = storage_client.bucket(export_bucket)
         
         # Query all scored standard applications

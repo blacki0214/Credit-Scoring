@@ -22,6 +22,10 @@ This guide covers the complete deployment of both the production API and the aut
 gcloud auth login
 gcloud config set project YOUR_PROJECT_ID
 gcloud config set compute/region asia-southeast1
+
+# Derive reusable variables
+PROJECT_NUMBER=$(gcloud projects describe $(gcloud config get-value project) --format="value(projectNumber)")
+RETRAIN_BUCKET="credit-scoring-retrain-${PROJECT_NUMBER}"
 ```
 
 ### 3. Enable Required APIs
@@ -60,15 +64,15 @@ gcloud secrets add-iam-policy-binding credit-api-key \
 
 ### Step 2: Create GCS Bucket for Models
 ```bash
-gsutil mb -l asia-southeast1 gs://retrain
+gsutil mb -l asia-southeast1 gs://${RETRAIN_BUCKET}
 ```
 
 ### Step 3: Upload Current Models to GCS
 ```bash
 cd credit-scoring-api
-gsutil cp models/xgboost_final.pkl gs://mlretrain/models/production/
-gsutil cp models/lgb_model_optimized.pkl gs://mlretrain/models/production/
-gsutil cp models/ensemble_comparison_metadata.pkl gs://mlretrain/models/production/
+gsutil cp models/xgboost_final.pkl gs://${RETRAIN_BUCKET}/models/production/
+gsutil cp models/lgb_model_optimized.pkl gs://${RETRAIN_BUCKET}/models/production/
+gsutil cp models/ensemble_comparison_metadata.pkl gs://${RETRAIN_BUCKET}/models/production/
 ```
 
 ### Step 4: Deploy API to Cloud Run
@@ -80,7 +84,7 @@ gcloud run deploy credit-scoring-api \
   --platform managed \
   --region asia-southeast1 \
   --allow-unauthenticated \
-  --set-env-vars "ENVIRONMENT=production,LOG_LEVEL=INFO,GCS_MODEL_BUCKET=mlretrain,GCS_MODEL_PREFIX=models/production" \
+  --set-env-vars "ENVIRONMENT=production,LOG_LEVEL=INFO,GCS_MODEL_BUCKET=${RETRAIN_BUCKET},GCS_MODEL_PREFIX=models/production" \
   --set-secrets "SECRET_KEY=credit-api-secret-key:latest,API_KEY=credit-api-key:latest" \
   --memory 2Gi \
   --cpu 2 \
@@ -190,12 +194,12 @@ gcloud scheduler jobs list --location=asia-southeast1
 
 ### 2. Check GCS Bucket Structure
 ```bash
-gsutil ls -r gs://retrain/
+gsutil ls -r gs://${RETRAIN_BUCKET}/
 ```
 
 Expected structure:
 ```
-gs://retrain/
+gs://${RETRAIN_BUCKET}/
   data/
     exports/
   models/
@@ -316,11 +320,11 @@ gcloud scheduler jobs resume retrain-weekly --location=asia-southeast1
 ### Manual Model Rollback
 ```bash
 # List archived models
-gsutil ls gs://retrain/models/archive/
+gsutil ls gs://${RETRAIN_BUCKET}/models/archive/
 
 # Copy old model to production
-gsutil cp gs://retrain/models/archive/lgb_model_TIMESTAMP.pkl \
-          gs://retrain/models/production/lgb_model_optimized.pkl
+gsutil cp gs://${RETRAIN_BUCKET}/models/archive/lgb_model_TIMESTAMP.pkl \
+          gs://${RETRAIN_BUCKET}/models/production/lgb_model_optimized.pkl
 
 # Restart API to pick up new model
 gcloud run services update credit-scoring-api --region=asia-southeast1

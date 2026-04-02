@@ -6,6 +6,7 @@ Implements: MODEL_RETRAINING_PIPELINE.md
 """
 
 from google.cloud import storage
+from google.api_core.exceptions import NotFound
 import pandas as pd
 import xgboost as xgb
 import joblib
@@ -22,10 +23,17 @@ import os
 import sys
 
 # Configuration
-GCS_BUCKET = os.getenv('GCS_BUCKET', 'credit-scoring-retrain-976448868286')
+GCS_BUCKET = os.getenv('GCS_BUCKET', 'credit-scoring-retrain-513943636250')
+GCS_BUCKET_FALLBACKS = [
+    bucket.strip() for bucket in os.getenv('GCS_BUCKET_FALLBACKS', '').split(',')
+    if bucket.strip()
+]
 MIN_SAMPLES = int(os.getenv('MIN_SAMPLES', '500'))
 MIN_AUC_IMPROVEMENT = float(os.getenv('MIN_AUC_IMPROVEMENT', '0.02'))
 PROMOTION_THRESHOLD = float(os.getenv('PROMOTION_THRESHOLD', '0.86'))
+
+# Bucket used by this execution after fallback resolution.
+ACTIVE_GCS_BUCKET = GCS_BUCKET
 
 
 def log(message):
@@ -34,27 +42,59 @@ def log(message):
     print(f"[{timestamp}] {message}")
 
 
+def _candidate_buckets():
+    """Return ordered unique buckets to try for this run."""
+    seen = set()
+    candidates = []
+    for bucket_name in [GCS_BUCKET] + GCS_BUCKET_FALLBACKS:
+        if bucket_name not in seen:
+            seen.add(bucket_name)
+            candidates.append(bucket_name)
+    return candidates
+
+
 def load_latest_export():
     """Load most recent Firestore export from GCS"""
+    global ACTIVE_GCS_BUCKET
+
     log("Loading latest data export from GCS")
-    
+
     client = storage.Client()
-    bucket = client.bucket(GCS_BUCKET)
-    
-    # List all exports
-    blobs = list(bucket.list_blobs(prefix='data/exports/loan_applications_'))
-    if not blobs:
-        raise ValueError("No data exports found in GCS")
-    
-    # Get most recent
-    latest_blob = max(blobs, key=lambda b: b.time_created)
-    log(f"Found latest export: {latest_blob.name}")
-    
-    # Download and load
-    df = pd.read_parquet(f'gs://{GCS_BUCKET}/{latest_blob.name}')
-    log(f"Loaded {len(df)} records from {latest_blob.name}")
-    
-    return df
+
+    missing_buckets = []
+    for bucket_name in _candidate_buckets():
+        bucket = client.bucket(bucket_name)
+        try:
+            blobs = list(bucket.list_blobs(prefix='data/exports/loan_applications_'))
+        except NotFound:
+            missing_buckets.append(bucket_name)
+            log(f"WARNING: Bucket not found: {bucket_name}")
+            continue
+
+        if not blobs:
+            log(f"No exports found in bucket: {bucket_name}")
+            continue
+
+        latest_blob = max(blobs, key=lambda b: b.time_created)
+        ACTIVE_GCS_BUCKET = bucket_name
+        log(f"Found latest export in {bucket_name}: {latest_blob.name}")
+
+        df = pd.read_parquet(f'gs://{bucket_name}/{latest_blob.name}')
+        log(f"Loaded {len(df)} records from {latest_blob.name}")
+        return df
+
+    if missing_buckets:
+        raise ValueError(
+            "GCS bucket not found. Checked: "
+            + ", ".join(missing_buckets)
+            + ". Update GCS_BUCKET or create the bucket before retraining."
+        )
+
+    raise ValueError(
+        "No data exports found in configured buckets. "
+        + "Checked: "
+        + ", ".join(_candidate_buckets())
+    )
 
 
 def prepare_target(df):
@@ -155,7 +195,7 @@ def compare_with_production(new_model, X_test, y_test):
     log("Comparing with production model")
 
     client = storage.Client()
-    bucket = client.bucket(GCS_BUCKET)
+    bucket = client.bucket(ACTIVE_GCS_BUCKET)
 
     # Load production model
     try:
@@ -197,7 +237,7 @@ def save_to_staging(model, metrics, feature_names):
     log("Saving model to staging")
 
     client = storage.Client()
-    bucket = client.bucket(GCS_BUCKET)
+    bucket = client.bucket(ACTIVE_GCS_BUCKET)
 
     timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
 
@@ -207,7 +247,7 @@ def save_to_staging(model, metrics, feature_names):
 
     model_blob = bucket.blob(f'models/staging/xgb_retrained_{timestamp}.pkl')
     model_blob.upload_from_filename(local_path)
-    log(f"Model saved: gs://{GCS_BUCKET}/models/staging/xgb_retrained_{timestamp}.pkl")
+    log(f"Model saved: gs://{ACTIVE_GCS_BUCKET}/models/staging/xgb_retrained_{timestamp}.pkl")
 
     # Save metadata
     metadata = {
@@ -220,7 +260,7 @@ def save_to_staging(model, metrics, feature_names):
 
     metadata_blob = bucket.blob(f'models/staging/metadata_{timestamp}.json')
     metadata_blob.upload_from_string(json.dumps(metadata, indent=2, default=str))
-    log(f"Metadata saved: gs://{GCS_BUCKET}/models/staging/metadata_{timestamp}.json")
+    log(f"Metadata saved: gs://{ACTIVE_GCS_BUCKET}/models/staging/metadata_{timestamp}.json")
 
     return timestamp
 
@@ -230,7 +270,7 @@ def promote_to_production(timestamp):
     log("Promoting model to production")
 
     client = storage.Client()
-    bucket = client.bucket(GCS_BUCKET)
+    bucket = client.bucket(ACTIVE_GCS_BUCKET)
 
     # Archive current production model if exists
     try:
@@ -259,6 +299,8 @@ def main():
     log("="*60)
     log(f"Configuration:")
     log(f"  GCS Bucket: {GCS_BUCKET}")
+    if GCS_BUCKET_FALLBACKS:
+        log(f"  Bucket Fallbacks: {', '.join(GCS_BUCKET_FALLBACKS)}")
     log(f"  Min Samples: {MIN_SAMPLES}")
     log(f"  Min AUC Improvement: {MIN_AUC_IMPROVEMENT}")
     log(f"  Promotion Threshold: {PROMOTION_THRESHOLD}")
@@ -267,6 +309,8 @@ def main():
     try:
         # Step 1: Load data
         df = load_latest_export()
+        if ACTIVE_GCS_BUCKET != GCS_BUCKET:
+            log(f"Using fallback bucket for this run: {ACTIVE_GCS_BUCKET}")
 
         if len(df) < MIN_SAMPLES:
             log(f"ERROR: Not enough data. Need {MIN_SAMPLES}, have {len(df)}.")

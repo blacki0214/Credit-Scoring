@@ -1,0 +1,24 @@
+{
+  "displayName": "API 5xx Errors - credit-scoring-api",
+  "severity": "CRITICAL",
+  "documentation": {
+    "content": "Alert when API returns 5xx responses.",
+    "mimeType": "text/markdown"
+  },
+  "combiner": "OR",
+  "enabled": true,
+  "conditions": [
+    {
+      "displayName": "API 5xx log match",
+      "conditionMatchedLog": {
+        "filter": "resource.type=\"cloud_run_revision\" AND resource.labels.service_name=\"credit-scoring-api\" AND httpRequest.status>=500"
+      }
+    }
+  ],
+  "alertStrategy": {
+    "autoClose": "1800s",
+    "notificationRateLimit": {
+      "period": "300s"
+    }
+  }
+}

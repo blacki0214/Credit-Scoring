@@ -1,0 +1,24 @@
+{
+  "displayName": "Retrain Job Errors - retrain-job",
+  "severity": "ERROR",
+  "documentation": {
+    "content": "Alert when retrain Cloud Run job emits error logs.",
+    "mimeType": "text/markdown"
+  },
+  "combiner": "OR",
+  "enabled": true,
+  "conditions": [
+    {
+      "displayName": "Retrain job error log match",
+      "conditionMatchedLog": {
+        "filter": "resource.type=\"cloud_run_job\" AND resource.labels.job_name=\"retrain-job\" AND severity>=ERROR"
+      }
+    }
+  ],
+  "alertStrategy": {
+    "autoClose": "1800s",
+    "notificationRateLimit": {
+      "period": "300s"
+    }
+  }
+}

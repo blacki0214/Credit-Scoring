@@ -19,7 +19,7 @@ COPY retrain_job.py .
 COPY email_notifier.py .
 
 # Set environment variables (can be overridden at runtime)
-ENV GCS_BUCKET=credit-scoring-retrain-976448868286
+ENV GCS_BUCKET=credit-scoring-retrain-513943636250
 ENV MIN_SAMPLES=500
 ENV MIN_AUC_IMPROVEMENT=0.02
 ENV PROMOTION_THRESHOLD=0.86

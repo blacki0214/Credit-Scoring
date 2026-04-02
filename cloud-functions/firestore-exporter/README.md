@@ -60,5 +60,5 @@ curl -X POST https://asia-southeast1-YOUR_PROJECT.cloudfunctions.net/export-fire
 ## Output
 
 Exports are saved to:
-- Data: `gs://retrain/data/exports/loan_applications_YYYYMMDD_HHMMSS.parquet`
-- Metadata: `gs://retrain/data/exports/metadata_YYYYMMDD_HHMMSS.json`
+- Data: `gs://${RETRAIN_BUCKET}/data/exports/loan_applications_YYYYMMDD_HHMMSS.parquet`
+- Metadata: `gs://${RETRAIN_BUCKET}/data/exports/metadata_YYYYMMDD_HHMMSS.json`
