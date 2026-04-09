@@ -1,152 +1,227 @@
 # Hướng Dẫn Tích Hợp App (Mobile/Web) - Credit Scoring
 
 ## 1) Mục tiêu
-Tài liệu này hướng dẫn team app tích hợp API production theo chuẩn ổn định:
-- URL production và fallback
-- Luồng API 2 bước
-- Xử lý auth/token
-- Retry/timeout/error handling
-- Checklist trước khi release
+Tài liệu này là bản triển khai thực thi để team app:
+- Tích hợp nhanh 2 luồng API: thường và sinh viên.
+- Lấy và truyền Firebase token đúng chuẩn.
+- Test end-to-end được ngay trên production.
+- Có checklist pass/fail rõ ràng trước khi release.
 
-## 2) Endpoint production
-- Base URL chính: https://swincredit.duckdns.org
-- Health check: https://swincredit.duckdns.org/api/health
+## 2) Base URL và endpoint cần dùng
 
-Khuyến nghị:
-- App client luôn gọi qua domain ở trên (không hardcode Cloud Run URL nội bộ).
-- Nếu triển khai fallback, chỉ dùng để giám sát nội bộ, không expose cho người dùng cuối.
+Production URL (ưu tiên):
+- https://swincredit.duckdns.org
 
-## 3) Cơ chế xác thực
-Hiện có 2 lớp phổ biến trong backend:
-1. Firebase ID Token (Authorization Bearer)
-2. API Key (X-API-Key) cho các endpoint yêu cầu key
+Production URL trực tiếp Cloud Run (fallback kỹ thuật):
+- https://credit-scoring-api-513943636250.asia-southeast1.run.app
 
-Header mẫu:
+Health:
+- GET /api/health
+
+Luồng thường:
+- POST /api/calculate-limit
+- POST /api/calculate-terms
+
+Luồng sinh viên:
+- POST /api/student/credit-score
+- POST /api/student/calculate-limit
+
+## 3) Xác thực cho app
+
+### 3.1 Header bắt buộc cho endpoint sinh viên
 ```http
 Authorization: Bearer <firebase_id_token>
-X-API-Key: <api_key>
 Content-Type: application/json
 ```
 
-Quy tắc phía app:
-- Token Firebase lấy từ phiên đăng nhập hiện tại.
-- Không hardcode API key trong source public.
-- API key lưu trong secure storage (hoặc cấp từ backend gateway nội bộ nếu có).
+### 3.2 Header cho endpoint monitoring nội bộ
+```http
+X-API-Key: <api_key>
+```
 
-## 4) Luồng nghiệp vụ khuyến nghị (2 bước)
+### 3.3 Lấy token trong Flutter
+```dart
+import 'package:firebase_auth/firebase_auth.dart';
 
-### Bước 1: Tính hạn mức và điểm tín dụng
-- Endpoint: POST /api/calculate-limit
-- Mục tiêu: lấy credit_score + loan_limit_vnd + risk_level + approved
-
-Payload tối thiểu (ví dụ):
-```json
-{
-  "full_name": "Nguyen Van A",
-  "age": 30,
-  "monthly_income": 20000000,
-  "employment_status": "EMPLOYED",
-  "years_employed": 5,
-  "home_ownership": "MORTGAGE",
-  "years_credit_history": 3,
-  "has_previous_defaults": false,
-  "currently_defaulting": false
+Future<String?> getFirebaseIdToken() async {
+  final user = FirebaseAuth.instance.currentUser;
+  if (user == null) return null;
+  return user.getIdToken(true); // force refresh
 }
 ```
 
-### Bước 2: Tính điều khoản khoản vay
-- Endpoint: POST /api/calculate-terms
-- Input cần dùng credit_score từ bước 1
+Quy tắc app:
+1. Luôn gọi `getIdToken(true)` trước request quan trọng.
+2. Nếu 401, refresh token 1 lần rồi retry 1 lần.
+3. Nếu vẫn 401, bắt user login lại.
 
-Payload ví dụ:
+## 4) Contract payload để app implement
+
+### 4.1 Student request
 ```json
 {
-  "loan_amount": 300000000,
-  "loan_purpose": "CAR",
-  "credit_score": 750
+  "age": 21,
+  "gpa_latest": 3.2,
+  "academic_year": 3,
+  "major": "technology",
+  "program_level": "undergraduate",
+  "living_status": "dormitory",
+  "has_buffer": true,
+  "support_sources": ["family", "part_time"],
+  "monthly_income": 2000000,
+  "monthly_expenses": 3000000
 }
 ```
 
-## 5) Timeout, retry, circuit breaker
-Thiết lập khuyến nghị phía app:
-- Connect timeout: 5s
-- Read timeout: 20s
-- Retry: tối đa 2 lần cho lỗi mạng (không retry vô hạn)
-- Backoff: exponential (300ms -> 900ms)
+### 4.2 Student response chính
+Các field cần map trong app model:
+1. `credit_score`
+2. `risk_level`
+3. `approved`
+4. `message`
+5. `default_probability`
+6. `approval_threshold`
+7. `score_model`
+8. `score_range`
+9. `decision_band`
+10. `manual_review`
 
-Chỉ retry với lỗi tạm thời:
-- Network timeout
-- HTTP 429
-- HTTP 502/503/504
+Riêng endpoint `student/calculate-limit` có thêm:
+1. `loan_limit_vnd`
+
+## 5) Luồng UI/UX khuyến nghị cho app
+
+### 5.1 Luồng sinh viên
+1. User nhập form hồ sơ sinh viên.
+2. App gọi `POST /api/student/credit-score` để hiển thị đánh giá nhanh.
+3. App gọi `POST /api/student/calculate-limit` để lấy hạn mức chính thức.
+4. Render theo trạng thái:
+- `approved=true`: hiện hạn mức và CTA tiếp tục.
+- `decision_band=manual_review`: hiện thông báo chờ thẩm định.
+- `approved=false`: hiện lý do trong `message`.
+
+### 5.2 Luồng thường (không sinh viên)
+1. `POST /api/calculate-limit`
+2. `POST /api/calculate-terms` dùng `credit_score` từ bước 1.
+
+## 6) HTTP client policy (mobile/web)
+
+Khuyến nghị:
+1. Connect timeout: 5s
+2. Read timeout: 20s
+3. Retry tối đa 2 lần
+4. Backoff: 300ms -> 900ms
+
+Retry với:
+1. Network timeout
+2. 429
+3. 502/503/504
 
 Không retry tự động với:
-- HTTP 400/401/403/422
+1. 400
+2. 401
+3. 403
+4. 422
 
-## 6) Mapping lỗi cho UX
-- 400/422: dữ liệu đầu vào sai -> hiển thị lỗi form cụ thể
-- 401: token hết hạn/thiếu -> refresh token hoặc login lại
-- 403: không đủ quyền/API key sai -> hiển thị lỗi truy cập
-- 429: quá hạn mức -> báo người dùng thử lại sau
-- 5xx: lỗi hệ thống -> hiển thị fallback message và cho phép retry
+## 7) Mapping lỗi cho app
 
-Message UX nên ngắn, rõ:
-- "Kết nối tạm thời gián đoạn. Vui lòng thử lại."
-- "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại."
+1. 400/422: lỗi input form, highlight field cụ thể.
+2. 401: refresh token 1 lần, fail thì login lại.
+3. 403: không đủ quyền hoặc sai key.
+4. 429: thông báo thử lại sau.
+5. 5xx: thông báo lỗi tạm thời + nút retry.
 
-## 7) Logging phía app (không lộ dữ liệu nhạy cảm)
-Bắt buộc log:
-- request_id (nếu có)
-- endpoint
-- status code
-- latency
-- retry count
+Message đề xuất:
+1. "Kết nối tạm thời gián đoạn. Vui lòng thử lại."
+2. "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại."
 
-Không log:
-- API key
-- Firebase token
-- thông tin PII đầy đủ (CMND/CCCD, email đầy đủ, số điện thoại đầy đủ)
+## 8) Test end-to-end cho team app
 
-## 8) Kiểm tra health trước khi mở app flow
-Trước khi vào luồng apply/recalculate:
-1. Gọi GET /api/health
-2. Nếu không 200 -> bật maintenance banner nhẹ
-3. Cho phép user retry thủ công
-
-## 9) Checklist QA trước release app
-1. /api/health trả 200 từ app thật
-2. calculate-limit trả dữ liệu đúng schema
-3. calculate-terms dùng credit_score từ bước 1 chạy ổn
-4. Token hết hạn được xử lý đúng (401 flow)
-5. 429/5xx có thông báo UX và retry hợp lý
-6. Không lộ secrets trong log
-7. Test trên mạng yếu (3G/4G chập chờn)
-
-## 10) Mẫu pseudo-code client
-```text
-onSubmitLimitForm():
-  validateLocalInput()
-  token = getFirebaseToken()
-  apiKey = getApiKeyFromSecureStore()
-  resp = call POST /api/calculate-limit
-  if success -> save credit_score, loan_limit
-  else -> mapErrorToUserMessage()
-
-onSubmitTermsForm():
-  require credit_score from step1
-  resp = call POST /api/calculate-terms
-  if success -> render loan terms
-  else -> mapErrorToUserMessage()
+### 8.1 Smoke test health
+```powershell
+Invoke-RestMethod -Method Get -Uri "https://swincredit.duckdns.org/api/health" | ConvertTo-Json -Depth 6
 ```
 
-## 11) Runbook mini cho team app khi có incident
-Nếu app báo lỗi hàng loạt:
-1. Kiểm tra ngay /api/health
-2. Kiểm tra status code phổ biến trong app logs
-3. Nếu 5xx tăng mạnh -> thông báo backend ops + bật maintenance banner
-4. Nếu 401 tăng mạnh -> kiểm tra luồng refresh token
-5. Nếu 429 tăng mạnh -> kiểm tra retry logic và tần suất gọi API
+### 8.2 Lấy token test bằng Firebase REST
+Chuẩn bị:
+1. Firebase Web API Key
+2. User test email/password
 
-## 12) Ghi chú vận hành
-- Domain production hiện tại đã gắn qua LB + HTTPS + Cloud Armor.
-- Alerting backend đã cấu hình cho API 5xx, exporter errors, retrain errors.
-- Với release app lớn, nên test end-to-end trên production ngoài giờ cao điểm.
+```powershell
+$apiKey = "<FIREBASE_WEB_API_KEY>"
+$email = "<TEST_EMAIL>"
+$password = "<TEST_PASSWORD>"
+
+$body = @{ email = $email; password = $password; returnSecureToken = $true } | ConvertTo-Json
+$authResp = Invoke-RestMethod -Method Post `
+  -Uri "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=$apiKey" `
+  -ContentType "application/json" -Body $body
+
+$idToken = $authResp.idToken
+```
+
+### 8.3 Test student calculate-limit với token
+```powershell
+$payload = @{
+  age = 21
+  gpa_latest = 3.2
+  academic_year = 3
+  major = "technology"
+  program_level = "undergraduate"
+  living_status = "dormitory"
+  has_buffer = $true
+  support_sources = @("family", "part_time")
+  monthly_income = 2000000
+  monthly_expenses = 3000000
+} | ConvertTo-Json
+
+Invoke-RestMethod -Method Post `
+  -Uri "https://swincredit.duckdns.org/api/student/calculate-limit" `
+  -Headers @{ Authorization = "Bearer $idToken" } `
+  -ContentType "application/json" `
+  -Body $payload | ConvertTo-Json -Depth 8
+```
+
+Pass condition:
+1. HTTP 200
+2. Có đủ field `decision_band`, `approved`, `credit_score`, `loan_limit_vnd`
+3. App parse JSON thành model thành công
+
+## 9) Checklist QA trước release
+
+1. `/api/health` trả 200 từ app thật.
+2. Luồng student gọi được cả 2 endpoint với Firebase token thật.
+3. 401 flow (token hết hạn) được xử lý đúng.
+4. 429/5xx có UX fallback và retry hợp lý.
+5. Không log token, API key, PII đầy đủ.
+6. Test mạng yếu (3G/4G chập chờn) không crash.
+7. Mapping `decision_band` đúng với UI state.
+
+## 10) Pseudo-code tích hợp app
+```text
+submitStudentApplication():
+  validateLocalInput()
+  token = getFirebaseIdToken(forceRefresh=true)
+  scoreResp = POST /api/student/credit-score (Bearer token)
+  limitResp = POST /api/student/calculate-limit (Bearer token)
+  renderUI(scoreResp, limitResp)
+
+submitRegularApplication():
+  validateLocalInput()
+  limitResp = POST /api/calculate-limit
+  termsResp = POST /api/calculate-terms using limitResp.credit_score
+  renderLoanTerms(termsResp)
+```
+
+## 11) Runbook sự cố cho team app
+
+1. Kiểm tra `/api/health` ngay khi lỗi hàng loạt.
+2. Nếu 401 tăng đột biến: kiểm tra refresh token flow.
+3. Nếu 5xx tăng: bật maintenance banner tạm thời + báo backend.
+4. Nếu 429 tăng: giảm tần suất gọi và xem lại retry policy.
+
+## 12) Ghi chú triển khai production
+
+1. Không hardcode API key trong source public.
+2. Tách base URL theo môi trường (`dev/staging/prod`).
+3. Với release lớn, chạy canary app và theo dõi lỗi tối thiểu 24h.
