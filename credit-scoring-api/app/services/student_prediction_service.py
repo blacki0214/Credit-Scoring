@@ -163,11 +163,25 @@ class StudentPredictionService:
         Returns:
             (decision_band, approved, manual_review)
         """
-        margin = max(0.0, min(settings.STUDENT_MANUAL_REVIEW_MARGIN, 0.25))
-        lower = max(0.0, self._threshold - margin)
+        base_margin = max(0.0, min(settings.STUDENT_MANUAL_REVIEW_MARGIN, 0.25))
+        policy = str(settings.STUDENT_DECISION_POLICY or "balanced").strip().lower()
+
+        if policy == "safe":
+            # Wider review window for safer launch.
+            margin = max(base_margin, 0.10)
+            approve_cutoff = max(0.0, self._threshold - margin)
+        elif policy == "aggressive":
+            # Narrow review window and slightly higher approve cutoff.
+            margin = min(base_margin, 0.03)
+            approve_cutoff = min(1.0, self._threshold + margin)
+        else:
+            # Balanced default: approve below threshold, review near reject side.
+            margin = base_margin
+            approve_cutoff = self._threshold
+
         upper = min(1.0, self._threshold + margin)
 
-        if probability < lower:
+        if probability < approve_cutoff:
             return "auto_approve", True, False
         if probability <= upper:
             return "manual_review", False, True

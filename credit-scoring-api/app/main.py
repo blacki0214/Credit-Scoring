@@ -64,6 +64,11 @@ async def startup_event():
     logger.info(f"Environment: {settings.ENVIRONMENT}")
     logger.info(f"CORS allowed origins: {settings.allowed_origins_list}")
     logger.info(f"API authentication: {'Enabled' if settings.API_KEY else 'Disabled (dev mode)'}")
+    logger.info(
+        "Student decision policy: %s (manual_review_margin=%.3f)",
+        settings.STUDENT_DECISION_POLICY,
+        settings.STUDENT_MANUAL_REVIEW_MARGIN,
+    )
     strict_student_preflight = settings.STUDENT_STARTUP_STRICT_PREFLIGHT
     student_preflight = student_prediction_service.validate_runtime_assets(
         strict=strict_student_preflight

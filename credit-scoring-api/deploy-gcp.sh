@@ -39,7 +39,7 @@ gcloud run deploy credit-scoring-api \
   --platform managed \
   --region asia-southeast1 \
   --allow-unauthenticated \
-  --set-env-vars "ENVIRONMENT=production,LOG_LEVEL=INFO,ALLOWED_ORIGINS=https://your-frontend-domain.com,STUDENT_STARTUP_STRICT_PREFLIGHT=false" \
+  --set-env-vars "ENVIRONMENT=production,LOG_LEVEL=INFO,ALLOWED_ORIGINS=https://your-frontend-domain.com,STUDENT_STARTUP_STRICT_PREFLIGHT=false,STUDENT_DECISION_POLICY=safe,STUDENT_MANUAL_REVIEW_MARGIN=0.10" \
   --set-secrets "SECRET_KEY=credit-api-secret-key:latest,API_KEY=credit-api-key:latest" \
   --memory 2Gi \
   --cpu 2 \

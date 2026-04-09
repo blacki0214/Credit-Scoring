@@ -8,7 +8,7 @@ and downstream labeling/retraining.
 from __future__ import annotations
 
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any, Dict, Optional
 
 from firebase_admin import firestore
@@ -92,6 +92,51 @@ class StudentApplicationLogger:
             credit_score,
         )
         return ref.id
+
+    def get_monitoring_summary(self, window_hours: int = 24) -> Dict[str, Any]:
+        """Return quick canary metrics from recent student applications."""
+        db = self._get_db()
+        if db is None:
+            raise RuntimeError("Firestore client is not available")
+
+        collection = settings.STUDENT_APPLICATIONS_COLLECTION
+        now = datetime.utcnow()
+        safe_hours = max(1, int(window_hours))
+        since = now - timedelta(hours=safe_hours)
+
+        query = db.collection(collection).where("createdAt", ">=", since)
+        docs = list(query.stream())
+
+        total = len(docs)
+        approved_count = 0
+        manual_review_count = 0
+        rejected_count = 0
+
+        for doc in docs:
+            item = doc.to_dict() or {}
+            if bool(item.get("approved", False)):
+                approved_count += 1
+            else:
+                rejected_count += 1
+            if bool(item.get("manual_review", False)):
+                manual_review_count += 1
+
+        def _ratio(count: int) -> float:
+            return float(count / total) if total > 0 else 0.0
+
+        return {
+            "window_hours": safe_hours,
+            "from_utc": since.isoformat() + "Z",
+            "to_utc": now.isoformat() + "Z",
+            "collection": collection,
+            "total_applications": total,
+            "approved_count": approved_count,
+            "rejected_count": rejected_count,
+            "manual_review_count": manual_review_count,
+            "approve_rate": round(_ratio(approved_count), 4),
+            "manual_review_rate": round(_ratio(manual_review_count), 4),
+            "reject_rate": round(_ratio(rejected_count), 4),
+        }
 
 
 student_application_logger = StudentApplicationLogger()

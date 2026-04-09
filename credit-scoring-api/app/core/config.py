@@ -78,7 +78,9 @@ class Settings(BaseSettings):
     # Student application logging
     STUDENT_APP_LOGGING_ENABLED: bool = True
     STUDENT_APPLICATIONS_COLLECTION: str = "student_applications"
+    STUDENT_DECISION_POLICY: str = "balanced"  # safe | balanced | aggressive
     STUDENT_MANUAL_REVIEW_MARGIN: float = 0.05
+    STUDENT_MONITORING_WINDOW_HOURS: int = 24
     STUDENT_SCORING_REFERENCE_LOAN_AMOUNT: int = 5_000_000
     STUDENT_CALIBRATION_ENABLED: bool = True
     STUDENT_CALIBRATOR_FILENAME: str = "student_calibrator_isotonic.pkl"
