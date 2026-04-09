@@ -73,6 +73,17 @@ Quy tắc app:
 }
 ```
 
+### 4.3 Validation khuyến nghị ngay trên app (trước khi gọi API)
+Để tránh bị reject hàng loạt do input phi thực tế, nên chặn các case sau ở client:
+1. `monthly_income <= 0` và `monthly_expenses` quá cao.
+2. `monthly_expenses > 3 * monthly_income` (với user có thu nhập > 0).
+3. `support_sources` rỗng hoàn toàn và `has_buffer=false` nhưng lại request profile rủi ro thấp.
+
+Rule đề xuất để UX tốt hơn:
+1. Nếu chưa có thu nhập, đặt `monthly_income` nhỏ hợp lý theo thực tế (ví dụ trợ cấp gia đình quy đổi), không để 0.
+2. Nếu user nhập chi phí rất cao, hiển thị cảnh báo và yêu cầu xác nhận lại.
+3. Với năm 1 và GPA thấp, hiển thị cảnh báo eligibility trước khi submit.
+
 ### 4.2 Student response chính
 Các field cần map trong app model:
 1. `credit_score`

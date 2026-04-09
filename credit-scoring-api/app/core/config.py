@@ -80,6 +80,7 @@ class Settings(BaseSettings):
     STUDENT_APPLICATIONS_COLLECTION: str = "student_applications"
     STUDENT_DECISION_POLICY: str = "balanced"  # safe | balanced | aggressive
     STUDENT_MANUAL_REVIEW_MARGIN: float = 0.05
+    STUDENT_APPROVAL_THRESHOLD_OVERRIDE: float = 0.0  # 0 disables override
     STUDENT_MONITORING_WINDOW_HOURS: int = 24
     STUDENT_SCORING_REFERENCE_LOAN_AMOUNT: int = 5_000_000
     STUDENT_CALIBRATION_ENABLED: bool = True

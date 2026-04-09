@@ -90,6 +90,16 @@ class StudentPredictionService:
         else:
             logger.warning(f"Threshold file not found, using default {DEFAULT_THRESHOLD}")
 
+        # Optional runtime override for fast policy tuning in production.
+        override = float(settings.STUDENT_APPROVAL_THRESHOLD_OVERRIDE)
+        if 0.0 < override < 1.0:
+            logger.warning(
+                "Student threshold override active: %.4f (artifact threshold %.4f)",
+                override,
+                self._threshold,
+            )
+            self._threshold = override
+
         if settings.STUDENT_CALIBRATION_ENABLED and calibrator_path.exists():
             with open(calibrator_path, "rb") as f:
                 self._calibrator = pickle.load(f)
