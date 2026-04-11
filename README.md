@@ -9,7 +9,7 @@
 [![XGBoost](https://img.shields.io/badge/XGBoost-ML-orange?style=for-the-badge)](https://xgboost.readthedocs.io/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
 
-[📚 Live API Docs](https://credit-scoring-api-wrkfygkl6a-as.a.run.app/docs) • [🚀 Quick Start](#-quick-start) • [📖 Integration Guide](#-integration-guide)
+[📚 Live API Docs](https://swincredit.duckdns.org/docs) • [🚀 Quick Start](#-quick-start) • [📖 Integration Guide](#-integration-guide)
 
 </div>
 
@@ -50,7 +50,7 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload --port 8000
 ```
 
-**🌐 Open:** https://credit-scoring-api-wrkfygkl6a-as.a.run.app/docs
+**🌐 Open:** https://swincredit.duckdns.org/docs
 
 ---
 
@@ -207,7 +207,7 @@ headers = {
 }
 
 response = requests.post(
-    "https://credit-scoring-api-wrkfygkl6a-as.a.run.app/api/calculate-limit",
+    "https://swincredit.duckdns.org/api/calculate-limit",
     headers=headers,
     json={...}
 )
@@ -215,7 +215,7 @@ response = requests.post(
 
 **JavaScript:**
 ```javascript
-const response = await fetch('https://credit-scoring-api-wrkfygkl6a-as.a.run.app/api/calculate-limit', {
+const response = await fetch('https://swincredit.duckdns.org/api/calculate-limit', {
   method: 'POST',
   headers: {
     'X-API-Key': 'your-api-key-here',
@@ -227,7 +227,7 @@ const response = await fetch('https://credit-scoring-api-wrkfygkl6a-as.a.run.app
 
 **cURL:**
 ```bash
-curl -X POST "https://credit-scoring-api-wrkfygkl6a-as.a.run.app/api/calculate-limit" \
+curl -X POST "https://swincredit.duckdns.org/api/calculate-limit" \
   -H "X-API-Key: your-api-key-here" \
   -H "Content-Type: application/json" \
   -d '{...}'
@@ -373,7 +373,7 @@ CAR loan (base 7.5%) + Credit score 750 (-1.0%) = 6.5% final rate 🎯
 ```python
 import requests
 
-API_URL = "https://credit-scoring-api-wrkfygkl6a-as.a.run.app"
+API_URL = "https://swincredit.duckdns.org"
 API_KEY = "your-api-key-here"  # Get from admin
 
 headers = {
@@ -416,7 +416,7 @@ print(f"Total Payment: {terms['total_payment_vnd']:,} VND")
 ### 🟨 JavaScript/TypeScript Example
 
 ```javascript
-const API_URL = 'https://credit-scoring-api-wrkfygkl6a-as.a.run.app';
+const API_URL = 'https://swincredit.duckdns.org';
 const API_KEY = 'your-api-key-here';  // Get from admin
 
 // Step 1: Get credit score and loan limit
@@ -506,7 +506,7 @@ USE_XGBOOST=true
 ### Interactive API Documentation
 
 - 🏠 **Local:** http://localhost:8000/docs
-- 🌐 **Live:** https://credit-scoring-api-wrkfygkl6a-as.a.run.app/docs
+- 🌐 **Live:** https://swincredit.duckdns.org/docs
 
 ### Test Cases
 
@@ -705,7 +705,7 @@ MIT License - Free to use for commercial and personal projects
 
 ## 💬 Support
 
-- 📚 **API Documentation:** https://credit-scoring-api-wrkfygkl6a-as.a.run.app/docs
+- 📚 **API Documentation:** https://swincredit.duckdns.org/docs
 - 🐛 **Issues:** Create a GitHub issue
 - ❓ **Questions:** Check API docs first
 - 🔑 **API Key:** Contact admin for access
