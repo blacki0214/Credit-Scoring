@@ -6,7 +6,7 @@
 
 [![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
-[![XGBoost](https://img.shields.io/badge/XGBoost-ML-orange?style=for-the-badge)](https://lightgbm.readthedocs.io/)
+[![XGBoost](https://img.shields.io/badge/XGBoost-ML-orange?style=for-the-badge)](https://xgboost.readthedocs.io/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
 
 [📚 Live API Docs](https://credit-scoring-api-wrkfygkl6a-as.a.run.app/docs) • [🚀 Quick Start](#-quick-start) • [📖 Integration Guide](#-integration-guide)
@@ -33,7 +33,7 @@
 ```bash
 # Clone and run
 git clone <repo-url>
-cd credit-scoring-api
+cd Credit-Scoring/credit-scoring-api
 docker-compose up -d
 
 # Check status
@@ -135,20 +135,6 @@ uvicorn app.main:app --reload --port 8000
 **📤 Example Response (Step 1):**
 ```json
 {
-  "full_name": "Nguyen Van A",
-  "age": 30,
-  "monthly_income": 20000000,
-  "employment_status": "EMPLOYED",
-  "years_employed": 5.0,
-  "home_ownership": "MORTGAGE",
-  "years_credit_history": 3,
-  "has_previous_defaults": false,
-  "currently_defaulting": false
-}
-```
-
-```json
-{
   "credit_score": 750,
   "loan_limit_vnd": 420000000,
   "risk_level": "Low",
@@ -221,7 +207,7 @@ headers = {
 }
 
 response = requests.post(
-    "https://credit-scoring-api-wrkfygkl6a-as.a.run.app/caculate-limit",
+    "https://credit-scoring-api-wrkfygkl6a-as.a.run.app/api/calculate-limit",
     headers=headers,
     json={...}
 )
@@ -229,7 +215,7 @@ response = requests.post(
 
 **JavaScript:**
 ```javascript
-const response = await fetch('https://credit-scoring-api-wrkfygkl6a-as.a.run.app/caculate-limit', {
+const response = await fetch('https://credit-scoring-api-wrkfygkl6a-as.a.run.app/api/calculate-limit', {
   method: 'POST',
   headers: {
     'X-API-Key': 'your-api-key-here',
@@ -241,7 +227,7 @@ const response = await fetch('https://credit-scoring-api-wrkfygkl6a-as.a.run.app
 
 **cURL:**
 ```bash
-curl -X POST "https://credit-scoring-api-wrkfygkl6a-as.a.run.app/caculate-limit" \
+curl -X POST "https://credit-scoring-api-wrkfygkl6a-as.a.run.app/api/calculate-limit" \
   -H "X-API-Key: your-api-key-here" \
   -H "Content-Type: application/json" \
   -d '{...}'
@@ -387,7 +373,7 @@ CAR loan (base 7.5%) + Credit score 750 (-1.0%) = 6.5% final rate 🎯
 ```python
 import requests
 
-API_URL = "https://credit-scoring-api-wrkfygkl6a-as.a.run.app/docs"
+API_URL = "https://credit-scoring-api-wrkfygkl6a-as.a.run.app"
 API_KEY = "your-api-key-here"  # Get from admin
 
 headers = {
@@ -430,7 +416,7 @@ print(f"Total Payment: {terms['total_payment_vnd']:,} VND")
 ### 🟨 JavaScript/TypeScript Example
 
 ```javascript
-const API_URL = 'https://credit-scoring-api-wrkfygkl6a-as.a.run.app/docs';
+const API_URL = 'https://credit-scoring-api-wrkfygkl6a-as.a.run.app';
 const API_KEY = 'your-api-key-here';  // Get from admin
 
 // Step 1: Get credit score and loan limit
@@ -585,6 +571,73 @@ credit-scoring-api/
 ├── 🐳 docker-compose.yml
 └── 📖 README.md
 ```
+
+---
+
+## 🎓 Final Slide And Final Report Guide
+
+Use this section as a direct checklist to prepare your project closing deliverables.
+
+### 1. Suggested Slide Deck Structure (12-15 slides)
+
+1. Project title, team, timeline
+2. Problem statement and business context
+3. Objectives and success criteria
+4. End-to-end architecture (mobile app, API, model, Firebase, GCP)
+5. Data sources and feature engineering approach
+6. Model development process (baseline, tuning, selected model)
+7. Key results (AUC, accuracy, latency, approval logic)
+8. API design and two-step loan flow
+9. Security and reliability (API key, rate limiting, health checks)
+10. Deployment and operations (Cloud Run, exporter, scheduler)
+11. Demo flow (simulation path and eKYC path)
+12. Limitations, risks, and mitigation
+13. Roadmap and next improvements
+14. Conclusion and Q&A
+
+### 2. Suggested Final Report Structure
+
+1. Executive summary
+2. Background and requirements
+3. System architecture and technology stack
+4. Data and preprocessing
+5. Feature engineering
+6. Model experimentation and evaluation
+7. API design and integration
+8. Security, testing, and quality control
+9. Deployment and MLOps/retraining workflow
+10. Results, impact, and discussion
+11. Limitations and future work
+12. Appendix (test logs, request/response examples, configs)
+
+### 3. Evidence Mapping (What To Capture From This Repo)
+
+| Deliverable Evidence | Where to collect it |
+|----------------------|---------------------|
+| API behavior and payload examples | `README.md`, `credit-scoring-api/test_api.py`, `docs/API_GUIDE.md` |
+| Security controls | `credit-scoring-api/test_security.py`, `credit-scoring-api/app/core/` |
+| Model and retraining pipeline | `credit-scoring-api/pipeline/retrain_job.py`, `credit-scoring-api/pipeline/feature_engineering.py`, `app/MODEL_RETRAINING_PIPELINE.md` |
+| Deployment design | `credit-scoring-api/deploy-gcp.sh`, `cloud-functions/firestore-exporter/deploy.sh`, `GCP_DEPLOYMENT_GUIDE.md` |
+| Integration flow (app + API) | `app/API_INTEGRATION_SPEC.md`, `docs/APP_INTEGRATION_GUIDE_VI.md` |
+| Operations and runbook | `docs/OPERATIONS_RUNBOOK_VI.md` |
+| Quantitative outputs/charts | `output/`, `output/plots/`, `output/threshold_optimization_results.json` |
+
+### 4. Minimum Figures/Tables To Include
+
+- Architecture diagram (system components and data flow)
+- Model performance table (AUC, accuracy, precision/recall if available)
+- Input feature summary table
+- API latency and reliability summary
+- Example decision case (input -> score -> limit -> terms)
+- Deployment topology diagram
+
+### 5. Final Submission Checklist
+
+- Slide deck includes problem, architecture, method, results, and roadmap
+- Report includes reproducible methods and clear metrics
+- All claims in slides/report are linked to code, outputs, or docs in this repo
+- Demo script is prepared (happy path + edge case)
+- Known limitations and risk controls are explicitly documented
 
 ---
 
